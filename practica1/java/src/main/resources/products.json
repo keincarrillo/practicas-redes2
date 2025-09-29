@@ -1,0 +1,36 @@
+[
+  { "id": 101, "name": "Auriculares",                 "brand": "Sony",      "type": "ELECTRONICA", "price": 899.0,  "stock": 8  },
+  { "id": 102, "name": "Reloj inteligente",           "brand": "Amazfit",   "type": "ELECTRONICA", "price": 1899.0, "stock": 5  },
+  { "id": 103, "name": "Ratón inalámbrico",           "brand": "Logitech",  "type": "ELECTRONICA", "price": 299.0,  "stock": 25 },
+  { "id": 104, "name": "Teclado mecánico",            "brand": "Redragon",  "type": "ELECTRONICA", "price": 749.0,  "stock": 12 },
+  { "id": 105, "name": "Monitor 24\"",                "brand": "Samsung",   "type": "ELECTRONICA", "price": 3299.0, "stock": 6  },
+  { "id": 106, "name": "Cargador USB-C 65W",          "brand": "Anker",     "type": "ELECTRONICA", "price": 549.0,  "stock": 15 },
+  { "id": 107, "name": "Bocina Bluetooth",            "brand": "JBL",       "type": "ELECTRONICA", "price": 1299.0, "stock": 10 },
+  { "id": 108, "name": "SSD externo 1TB",             "brand": "Samsung",   "type": "ELECTRONICA", "price": 2499.0, "stock": 7  },
+  { "id": 109, "name": "Cámara web HD",               "brand": "Logitech",  "type": "ELECTRONICA", "price": 699.0,  "stock": 18 },
+  { "id": 110, "name": "Batería portátil 20000mAh",   "brand": "Baseus",    "type": "ELECTRONICA", "price": 799.0,  "stock": 14 },
+
+  { "id": 201, "name": "Playera",                     "brand": "Adidas",    "type": "ROPA",        "price": 399.0,  "stock": 20 },
+  { "id": 202, "name": "Sudadera",                    "brand": "Nike",      "type": "ROPA",        "price": 899.0,  "stock": 10 },
+  { "id": 203, "name": "Jeans",                       "brand": "Levi's",    "type": "ROPA",        "price": 1199.0, "stock": 16 },
+  { "id": 204, "name": "Tenis",                       "brand": "Puma",      "type": "ROPA",        "price": 1699.0, "stock": 9  },
+  { "id": 205, "name": "Gorra",                       "brand": "New Era",   "type": "ROPA",        "price": 499.0,  "stock": 30 },
+  { "id": 206, "name": "Chamarra",                    "brand": "Columbia",  "type": "ROPA",        "price": 2299.0, "stock": 5  },
+  { "id": 207, "name": "Calcetas (paquete 6)",        "brand": "Hanes",     "type": "ROPA",        "price": 199.0,  "stock": 40 },
+
+  { "id": 301, "name": "Sartén 28cm",                 "brand": "T-fal",     "type": "HOGAR",       "price": 559.0,  "stock": 12 },
+  { "id": 302, "name": "Foco LED",                    "brand": "Philips",   "type": "HOGAR",       "price": 79.0,   "stock": 60 },
+  { "id": 303, "name": "Tetera eléctrica",            "brand": "Hamilton",  "type": "HOGAR",       "price": 899.0,  "stock": 11 },
+  { "id": 304, "name": "Aspiradora",                  "brand": "Dyson",     "type": "HOGAR",       "price": 8999.0, "stock": 3  },
+  { "id": 305, "name": "Almohada viscoelástica",      "brand": "Sealy",     "type": "HOGAR",       "price": 699.0,  "stock": 20 },
+  { "id": 306, "name": "Cafetera",                    "brand": "Oster",     "type": "HOGAR",       "price": 1499.0, "stock": 8  },
+  { "id": 307, "name": "Licuadora",                   "brand": "Ninja",     "type": "HOGAR",       "price": 2499.0, "stock": 4  },
+
+  { "id": 401, "name": "Café 500g",                   "brand": "Gourmet",   "type": "ALIMENTOS",   "price": 169.0,  "stock": 30 },
+  { "id": 402, "name": "Avena 1kg",                   "brand": "Quaker",    "type": "ALIMENTOS",   "price": 75.0,   "stock": 25 },
+  { "id": 403, "name": "Aceite de oliva 1L",          "brand": "Carbonell", "type": "ALIMENTOS",   "price": 249.0,  "stock": 18 },
+  { "id": 404, "name": "Pasta 500g",                  "brand": "Barilla",   "type": "ALIMENTOS",   "price": 39.0,   "stock": 50 },
+  { "id": 405, "name": "Salsa de tomate 340g",        "brand": "Hunt's",    "type": "ALIMENTOS",   "price": 29.0,   "stock": 45 },
+  { "id": 406, "name": "Té verde 20 sobres",          "brand": "Twinings",  "type": "ALIMENTOS",   "price": 79.0,   "stock": 35 },
+  { "id": 407, "name": "Almendras 250g",              "brand": "Kirkland",  "type": "ALIMENTOS",   "price": 129.0,  "stock": 22 }
+]
