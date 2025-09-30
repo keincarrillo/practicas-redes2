@@ -4,6 +4,11 @@ import threading
 from config.configurations import HOST, PORT
 from handlers.handlerClient import manejar_cliente
 
+DEBUG = True
+def log(*a): 
+    if DEBUG: 
+        print(*a, flush=True)
+
 def iniciar():
     print(f"Servidor en {HOST}:{PORT}")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: # Se crea el socket: AF_INET = IPv4, SOCK_STREAM = TCP
@@ -12,6 +17,7 @@ def iniciar():
         s.listen() # Escucha las conexiones
         while True:
             conn, addr = s.accept() # Acepta las conexiones y espera a que lleguen. conn = conexion, addr = direccion
+            log("Cliente conectado:", addr)
             threading.Thread(target=manejar_cliente, args=(conn, addr), daemon=True).start() # Crea un hilo para manejar la conexion
 
 if __name__ == "__main__":

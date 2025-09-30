@@ -28,45 +28,49 @@ def manejar_cliente(conn, addr):
         return round(total, 2), lineas # Devuelve el total y las lineas
 
     try:
-        enviar_json(conn, {"ok": True, "msg": "Bienvenido. Usa op=help para ver comandos."}) # Envia el mensaje
+        enviar_json(conn, {"ok": True, "message": "Bienvenido :)"}) # Envia el mensaje
         buffer = b"" # Se crea un buffer para recibir los datos vacio
         while True:
-            chunk = conn.recv(4096)
-            if not chunk:
-                break
-            buffer += chunk
-            while b"\n" in buffer:
-                linea, buffer = buffer.split(b"\n", 1)
-                if not linea.strip():
+            chunk = conn.recv(4096) # Recibe los datos, 4096 es el tamano del buffer
+            if not chunk: # Si no hay datos
+                break 
+            buffer += chunk # Agrega los datos al buffer, ya que el mensaje puede venir fragmentado
+            while b"\n" in buffer: # Cada mensaje termina con un salto de linea
+                linea, buffer = buffer.split(b"\n", 1) # Separa el buffer en la linea y el resto, 1 es el numero de veces que se divide
+                if not linea.strip(): # Si la linea esta vacia
                     continue
                 try:
-                    req = json.loads(linea.decode("utf-8"))
-                except Exception as e:
-                    enviar_json(conn, {"ok": False, "error": f"JSON inválido: {e}"})
+                    req = json.loads(linea.decode("utf-8")) # Decodifica la linea
+                except Exception as e: 
+                    enviar_json(conn, {"ok": False, "error": f"JSON inválido: {e}"}) # Si la linea no es valida
                     continue
 
-                op = (req.get("op") or "").lower()
+                op = (req.get("op") or "").lower() # Obtiene la operacion
 
-                if op == "list_types":
-                    enviar_json(conn, {"ok": True, "tipos": tipos_disponibles()}); continue
+                if op == "lt": # list_types
+                    enviar_json(conn, {"ok": True, "tipos": tipos_disponibles()}) 
+                    continue
 
-                if op == "search":
+                if op == "srch": # search
                     res = buscar_productos(req.get("name"), req.get("brand"))
                     enviar_json(conn, {"ok": True, "resultados": res}); continue
 
-                if op == "list_by_type":
+                if op == "lbt": #list_by_type
                     t = req.get("type")
-                    enviar_json(conn, {"ok": True, "resultados": listar_por_tipo(t)}); continue
+                    enviar_json(conn, {"ok": True, "resultados": listar_por_tipo(t)})
+                    continue
 
                 if op == "get_item":
                     prod = buscar_por_sku(req.get("sku"))
                     if prod: enviar_json(conn, {"ok": True, "producto": prod})
-                    else: enviar_json(conn, {"ok": False, "error": "No encontrado"}); continue
+                    else: enviar_json(conn, {"ok": False, "error": "No encontrado"})
+                    continue
 
                 if op == "add_to_cart":
                     sku, cant = req.get("sku"), req.get("qty")
                     if not sku or not isinstance(cant, int) or cant <= 0:
-                        enviar_json(conn, {"ok": False, "error": "Parámetros inválidos"}); continue
+                        enviar_json(conn, {"ok": False, "error": "Parámetros inválidos"})
+                        continue
                     with lock_inventario:
                         prod = buscar_por_sku(sku)
                         if not prod: enviar_json(conn, {"ok": False, "error": "SKU inválido"}); continue
@@ -75,11 +79,13 @@ def manejar_cliente(conn, addr):
                             enviar_json(conn, {"ok": False, "error": f"Stock insuficiente, disponible {prod['stock']-existente}"}); continue
                         carrito[sku] = existente + cant
                     total, lineas = total_carrito()
-                    enviar_json(conn, {"ok": True, "carrito": lineas, "total": total}); continue
+                    enviar_json(conn, {"ok": True, "carrito": lineas, "total": total})
+                    continue
 
                 if op == "show_cart":
                     total, lineas = total_carrito()
-                    enviar_json(conn, {"ok": True, "carrito": lineas, "total": total}); continue
+                    enviar_json(conn, {"ok": True, "carrito": lineas, "total": total})
+                    continue
 
                 if op == "checkout":
                     cliente = req.get("customer", "invitado")
@@ -87,7 +93,8 @@ def manejar_cliente(conn, addr):
                         for sku, cant in carrito.items():
                             prod = buscar_por_sku(sku)
                             if not prod or cant > prod["stock"]:
-                                enviar_json(conn, {"ok": False, "error": f"Sin stock en {sku}"}); break
+                                enviar_json(conn, {"ok": False, "error": f"Sin stock en {sku}"})
+                                break
                         else:
                             for sku, cant in carrito.items():
                                 buscar_por_sku(sku)["stock"] -= cant
