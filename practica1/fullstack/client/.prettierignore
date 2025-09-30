@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Archivos de configuración y lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Logs
+*.log
+
+# Cache
+.cache/
+.vite/
+vite.config.ts.timestamp*
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Coverage (tests)
+coverage/
+
+# Otros
+*.min.js
