@@ -1,59 +1,13 @@
-import socket
-import threading
 import json
+import datetime
 import uuid
-import os
-from datetime import datetime
+import threading
 
-HOST = "0.0.0.0"
-PORT = 5000
-ARCHIVO_PRODUCTOS = "data/productos.json"
+from utils.loadProducts import guardar_inventario, inventario
+from utils.utils import buscar_por_sku, tipos_disponibles, buscar_productos, listar_por_tipo
+from utils.sendJson import enviar_json
 
-lock_inventario = threading.Lock()
-
-# Cargar productos desde JSON externo
-def cargar_inventario():
-    if not os.path.exists(ARCHIVO_PRODUCTOS):
-        raise FileNotFoundError(f"No existe {ARCHIVO_PRODUCTOS}")
-    with open(ARCHIVO_PRODUCTOS, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def guardar_inventario(inventario):
-    with open(ARCHIVO_PRODUCTOS, "w", encoding="utf-8") as f:
-        json.dump(inventario, f, ensure_ascii=False, indent=2)
-
-inventario = cargar_inventario()
-
-def buscar_por_sku(sku):
-    for prod in inventario:
-        if prod["sku"].upper() == sku.upper():
-            return prod
-    return None
-
-def tipos_disponibles():
-    return sorted(set(prod["tipo"] for prod in inventario))
-
-def buscar_productos(nombre=None, marca=None):
-    nombre = (nombre or "").strip().lower()
-    marca = (marca or "").strip().lower()
-    encontrados = []
-    for prod in inventario:
-        ok = True
-        if nombre:
-            ok = ok and (nombre in prod["nombre"].lower())
-        if marca:
-            ok = ok and (marca in prod["marca"].lower())
-        if ok:
-            encontrados.append(prod)
-    return encontrados
-
-def listar_por_tipo(tipo):
-    tipo = tipo.strip().lower()
-    return [p for p in inventario if p["tipo"].lower() == tipo]
-
-def enviar_json(conn, obj):
-    data = (json.dumps(obj, ensure_ascii=False) + "\n").encode("utf-8")
-    conn.sendall(data)
+lock_inventario = threading.Lock() # Bloque el hilo principal para no modificar el inventario con varios clientes a la vez
 
 def manejar_cliente(conn, addr):
     carrito = {}
@@ -62,20 +16,20 @@ def manejar_cliente(conn, addr):
         total = 0.0
         lineas = []
         for sku, cant in carrito.items():
-            prod = buscar_por_sku(sku)
+            prod = buscar_por_sku(sku) # Busca el producto en el inventario
             if not prod:
                 continue
-            subtotal = prod["precio"] * cant
-            total += subtotal
-            lineas.append({
+            subtotal = prod["precio"] * cant # Calcula el subtotal
+            total += subtotal # Suma el subtotal al total
+            lineas.append({ # Agrega la linea al carrito
                 "sku": prod["sku"], "nombre": prod["nombre"], "cantidad": cant,
                 "precio_unitario": prod["precio"], "subtotal": round(subtotal, 2)
             })
-        return round(total, 2), lineas
+        return round(total, 2), lineas # Devuelve el total y las lineas
 
     try:
-        enviar_json(conn, {"ok": True, "msg": "Bienvenido. Usa op=help para ver comandos."})
-        buffer = b""
+        enviar_json(conn, {"ok": True, "msg": "Bienvenido. Usa op=help para ver comandos."}) # Envia el mensaje
+        buffer = b"" # Se crea un buffer para recibir los datos vacio
         while True:
             chunk = conn.recv(4096)
             if not chunk:
@@ -154,15 +108,3 @@ def manejar_cliente(conn, addr):
 
     finally:
         conn.close()
-
-def iniciar():
-    print(f"Servidor en {HOST}:{PORT}")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((HOST, PORT)); s.listen(5)
-        while True:
-            conn, addr = s.accept()
-            threading.Thread(target=manejar_cliente, args=(conn, addr), daemon=True).start()
-
-if __name__ == "__main__":
-    iniciar()
