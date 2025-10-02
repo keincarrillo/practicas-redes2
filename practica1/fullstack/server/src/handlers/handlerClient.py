@@ -1,5 +1,6 @@
+# server/src/handlers/handlerClient.py
 import json
-import datetime
+from datetime import datetime
 import uuid
 import threading
 
@@ -7,7 +8,7 @@ from utils.loadProducts import guardar_inventario, inventario
 from utils.utils import buscar_por_sku, tipos_disponibles, buscar_productos, listar_por_tipo
 from utils.sendJson import enviar_json
 
-lock_inventario = threading.Lock() # Bloque el hilo principal para no modificar el inventario con varios clientes a la vez
+lock_inventario = threading.Lock()
 
 def manejar_cliente(conn, addr):
     carrito = {}
@@ -16,88 +17,123 @@ def manejar_cliente(conn, addr):
         total = 0.0
         lineas = []
         for sku, cant in carrito.items():
-            prod = buscar_por_sku(sku) # Busca el producto en el inventario
+            prod = buscar_por_sku(sku, inventario)
             if not prod:
+                # producto desaparecido
                 continue
-            subtotal = prod["precio"] * cant # Calcula el subtotal
-            total += subtotal # Suma el subtotal al total
-            lineas.append({ # Agrega la linea al carrito
-                "sku": prod["sku"], "nombre": prod["nombre"], "cantidad": cant,
-                "precio_unitario": prod["precio"], "subtotal": round(subtotal, 2)
+            precio = float(prod.get("precio", 0.0))
+            sub = precio * int(cant)
+            total += sub
+            lineas.append({
+                "sku": prod.get("sku"),
+                "nombre": prod.get("nombre"),
+                "precio": precio,
+                "cantidad": int(cant),
+                "subtotal": sub
             })
-        return round(total, 2), lineas # Devuelve el total y las lineas
+        return round(total, 2), lineas
 
     try:
-        enviar_json(conn, {"ok": True, "message": "Bienvenido :)"}) # Envia el mensaje
-        buffer = b"" # Se crea un buffer para recibir los datos vacio
+        # Mensaje de bienvenida
+        enviar_json(conn, {"ok": True, "message": "Bienvenido :)"})
+        buffer = b""
         while True:
-            chunk = conn.recv(4096) # Recibe los datos, 4096 es el tamano del buffer
-            if not chunk: # Si no hay datos
-                break 
-            buffer += chunk # Agrega los datos al buffer, ya que el mensaje puede venir fragmentado
-            while b"\n" in buffer: # Cada mensaje termina con un salto de linea
-                linea, buffer = buffer.split(b"\n", 1) # Separa el buffer en la linea y el resto, 1 es el numero de veces que se divide
-                if not linea.strip(): # Si la linea esta vacia
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            buffer += chunk
+            while b"\n" in buffer:
+                linea, buffer = buffer.split(b"\n", 1)
+                if not linea.strip():
                     continue
+
                 try:
-                    req = json.loads(linea.decode("utf-8")) # Decodifica la linea
-                except Exception as e: 
-                    enviar_json(conn, {"ok": False, "error": f"JSON inválido: {e}"}) # Si la linea no es valida
+                    req = json.loads(linea.decode("utf-8"))
+                except Exception:
+                    enviar_json(conn, {"ok": False, "error": "JSON inválido"})
                     continue
 
-                op = (req.get("op") or "").lower() # Obtiene la operacion
+                op = (req.get("op") or "").strip()
 
-                if op == "lt": # list_types
-                    enviar_json(conn, {"ok": True, "tipos": tipos_disponibles()}) 
+                # ---- list types ----
+                if op == "lt":
+                    enviar_json(conn, {"ok": True, "tipos": tipos_disponibles(inventario)})
                     continue
 
-                if op == "srch": # search
-                    res = buscar_productos(req.get("name"), req.get("brand"))
-                    enviar_json(conn, {"ok": True, "resultados": res}); continue
-
-                if op == "lbt": #list_by_type
-                    t = req.get("type")
-                    enviar_json(conn, {"ok": True, "resultados": listar_por_tipo(t)})
+                # ---- list by type ----
+                if op == "lbt":
+                    t = req.get("tipo") or req.get("subcategoria") or req.get("categoria")
+                    if not t or not str(t).strip():
+                        enviar_json(conn, {"ok": False, "error": "Falta 'tipo' (subcategoria/categoria)"})
+                        continue
+                    res = listar_por_tipo(str(t), inventario)
+                    enviar_json(conn, {"ok": True, "resultados": res})
                     continue
 
-                if op == "get_item":
-                    prod = buscar_por_sku(req.get("sku"))
-                    if prod: enviar_json(conn, {"ok": True, "producto": prod})
-                    else: enviar_json(conn, {"ok": False, "error": "No encontrado"})
+                # ---- search ----
+                if op == "srch":
+                    nombre = req.get("nombre")
+                    marca  = req.get("marca")
+                    res = buscar_productos(nombre=nombre, marca=marca, inventario=inventario)
+                    enviar_json(conn, {"ok": True, "resultados": res})
                     continue
 
-                if op == "add_to_cart":
-                    sku, cant = req.get("sku"), req.get("qty")
+                # ---- get item ----
+                if op == "gi":
+                    sku = req.get("sku")
+                    if not sku:
+                        enviar_json(conn, {"ok": False, "error": "Falta 'sku'"})
+                        continue
+                    prod = buscar_por_sku(sku, inventario)
+                    if not prod:
+                        enviar_json(conn, {"ok": False, "error": "SKU inválido"})
+                        continue
+                    enviar_json(conn, {"ok": True, "item": prod})
+                    continue
+
+                # ---- add to cart ----
+                if op == "atc":
+                    sku = req.get("sku")
+                    cant = req.get("qty")
                     if not sku or not isinstance(cant, int) or cant <= 0:
                         enviar_json(conn, {"ok": False, "error": "Parámetros inválidos"})
                         continue
                     with lock_inventario:
-                        prod = buscar_por_sku(sku)
-                        if not prod: enviar_json(conn, {"ok": False, "error": "SKU inválido"}); continue
+                        prod = buscar_por_sku(sku, inventario)
+                        if not prod:
+                            enviar_json(conn, {"ok": False, "error": "SKU inválido"})
+                            continue
                         existente = carrito.get(sku, 0)
-                        if cant + existente > prod["stock"]:
-                            enviar_json(conn, {"ok": False, "error": f"Stock insuficiente, disponible {prod['stock']-existente}"}); continue
+                        stock = int(prod.get("stock", 0))
+                        if cant + existente > stock:
+                            enviar_json(conn, {"ok": False, "error": f"Stock insuficiente, disponible {stock - existente}"})
+                            continue
                         carrito[sku] = existente + cant
                     total, lineas = total_carrito()
                     enviar_json(conn, {"ok": True, "carrito": lineas, "total": total})
                     continue
 
-                if op == "show_cart":
+                # ---- show cart ----
+                if op == "sc":
                     total, lineas = total_carrito()
                     enviar_json(conn, {"ok": True, "carrito": lineas, "total": total})
                     continue
 
-                if op == "checkout":
-                    cliente = req.get("customer", "invitado")
+                # ---- checkout ----
+                if op == "co":
+                    cliente = req.get("cliente") or {"nombre": "anonimo"}
                     with lock_inventario:
+                        # validar stock
                         for sku, cant in carrito.items():
-                            prod = buscar_por_sku(sku)
-                            if not prod or cant > prod["stock"]:
+                            p = buscar_por_sku(sku, inventario)
+                            if not p or int(cant) > int(p.get("stock", 0)):
                                 enviar_json(conn, {"ok": False, "error": f"Sin stock en {sku}"})
                                 break
                         else:
+                            # descontar y guardar
                             for sku, cant in carrito.items():
-                                buscar_por_sku(sku)["stock"] -= cant
+                                p = buscar_por_sku(sku, inventario)
+                                p["stock"] = int(p.get("stock", 0)) - int(cant)
                             guardar_inventario(inventario)
                             total, lineas = total_carrito()
                             ticket = {
@@ -111,6 +147,7 @@ def manejar_cliente(conn, addr):
                             enviar_json(conn, {"ok": True, "ticket": ticket})
                     continue
 
+                # ---- op desconocida ----
                 enviar_json(conn, {"ok": False, "error": f"Operación desconocida: {op}"})
 
     finally:
