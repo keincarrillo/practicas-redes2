@@ -1,6 +1,5 @@
-import app from './src/api/app.js'
-import { PORT } from './src/config.js'
+import app from './src/proxy/app.js'
 
-app.listen(PORT, () => {
-  console.log(`Proxy running on port ${PORT}`)
+app.listen(process.env.PORT_PROXY, () => {
+  console.log(`Proxy running on port ${process.env.PORT_PROXY}`)
 })
