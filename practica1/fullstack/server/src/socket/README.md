@@ -15,14 +15,3 @@ En Arch Linux puedes instalarla con:
 ```bash
 sudo pacman -S python-dotenv
 ```
-
-# Configuración del entorno
-
-- Crea un archivo llamado .env dentro de la carpeta server.
-- Define las siguientes variables:
-
-  PORT: Puerto en el que el servidor escuchará.
-  HOST: Dirección IP del servidor.
-  ARCHIVO_PRODUCTOS: Nombre del archivo JSON con los productos.
-
-Es importante que el archivo .env esté en la misma carpeta que server.py.

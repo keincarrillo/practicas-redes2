@@ -4,7 +4,7 @@ import os
 import threading
 from dotenv import load_dotenv
 from handlers.handlerClient import manejar_cliente
-from config.configurations import PORT, HOST
+from config.configurations import PORT_PY, HOST_PY
 
 load_dotenv()
 
@@ -14,11 +14,11 @@ def log(*a):
         print(*a, flush=True)
 
 def iniciar():
-    print(f"Servidor en {HOST}:{PORT}")
+    print(f"Servidor en {HOST_PY}:{PORT_PY}")
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((HOST, PORT))
+        s.bind((HOST_PY, PORT_PY))
         s.listen()
         while True:
             conn, addr = s.accept()
