@@ -1,1 +1,0 @@
-ARCHIVO_PRODUCTOS = "data/productos.json"

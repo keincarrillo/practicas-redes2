@@ -1,11 +1,12 @@
-# server/src/handlers/handlerClient.py
 import json
 from datetime import datetime
 import uuid
 import threading
 
 from utils.loadProducts import guardar_inventario, inventario
-from utils.utils import buscar_por_sku, tipos_disponibles, buscar_productos, listar_por_tipo
+from utils.utils import (
+    buscar_por_sku, tipos_disponibles, buscar_productos, listar_por_tipo
+)
 from utils.sendJson import enviar_json
 
 lock_inventario = threading.Lock()
@@ -19,22 +20,13 @@ def manejar_cliente(conn, addr):
         for sku, cant in carrito.items():
             prod = buscar_por_sku(sku, inventario)
             if not prod:
-                # producto desaparecido
                 continue
-            precio = float(prod.get("precio", 0.0))
-            sub = precio * int(cant)
-            total += sub
-            lineas.append({
-                "sku": prod.get("sku"),
-                "nombre": prod.get("nombre"),
-                "precio": precio,
-                "cantidad": int(cant),
-                "subtotal": sub
-            })
-        return round(total, 2), lineas
+            precio = float(prod.get("precio", 0))
+            lineas.append({"sku": sku, "nombre": prod.get("nombre"), "qty": cant, "precio": precio, "subtotal": precio * cant})
+            total += precio * cant
+        return total, lineas
 
     try:
-        # Mensaje de bienvenida
         enviar_json(conn, {"ok": True, "message": "Bienvenido :)"})
         buffer = b""
         while True:
