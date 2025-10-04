@@ -1,5 +1,3 @@
-// Envía un objeto JSON al servidor TCP y obtiene UNA línea como respuesta.
-// Abre socket, envía JSON+"\n", lee hasta '\n', cierra y devuelve JSON parseado.
 import net from 'net'
 
 export const tcpRequest = (

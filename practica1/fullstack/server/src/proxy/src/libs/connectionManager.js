@@ -8,7 +8,6 @@ const SESSION_IDLE_MS = parseInt(process.env.SESSION_IDLE_MS || '120000', 10)
 const sessions = new Map()
 
 const isHandshake = line => {
-  // Ignora banners de bienvenida si tu server los envía al conectar
   try {
     const j = JSON.parse(line)
     if (j && typeof j === 'object') {
@@ -56,16 +55,24 @@ const createSession = sid => {
 
         state.reader.on('line', line => {
           if (isHandshake(line)) return
-          const cur = state.queue[0]
-          if (!cur) return
+
+          const current = state.queue[0]
+          if (!current) return
+
           state.queue.shift()
-          clearTimeout(cur.timeout)
+          clearTimeout(current.timeout)
           state.busy = false
+
           try {
-            cur.resolve(JSON.parse(line))
+            current.resolve(JSON.parse(line))
           } catch {
-            cur.resolve({ ok: false, error: 'Respuesta no JSON', raw: line })
+            current.resolve({
+              ok: false,
+              error: 'Respuesta no JSON',
+              raw: line
+            })
           }
+
           drain()
         })
 
@@ -74,6 +81,7 @@ const createSession = sid => {
         sock.on('close', () => failAll(new Error('TCP cerrado')))
         resolve()
       })
+
       sock.setNoDelay(true)
       sock.setKeepAlive(true)
       sock.setEncoding('utf8')
@@ -133,7 +141,6 @@ const createSession = sid => {
   }
 }
 
-// Limpieza periódica de sesiones inactivas
 setInterval(
   () => {
     const now = Date.now()
