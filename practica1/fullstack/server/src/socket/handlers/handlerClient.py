@@ -27,7 +27,7 @@ def manejar_cliente(conn, addr):
         return total, lineas
 
     try:
-        enviar_json(conn, {"ok": True, "message": "Bienvenido :)"})
+        #enviar_json(conn, {"ok": True, "message": "Bienvenido :)"})
         buffer = b""
         while True:
             chunk = conn.recv(4096)
@@ -86,7 +86,7 @@ def manejar_cliente(conn, addr):
                 # ---- add to cart ----
                 if op == "atc":
                     sku = req.get("sku")
-                    cant = req.get("qty")
+                    cant = req.get("cant")
                     if not sku or not isinstance(cant, int) or cant <= 0:
                         enviar_json(conn, {"ok": False, "error": "Parámetros inválidos"})
                         continue
