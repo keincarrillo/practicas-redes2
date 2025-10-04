@@ -127,7 +127,7 @@ const createSession = sid => {
     })
   }
 
-  const destroy = () => failAll(new Error('Sesión destruida'))
+  const destroy = () => failAll(new Error('Sesion destruida'))
 
   return {
     send,
