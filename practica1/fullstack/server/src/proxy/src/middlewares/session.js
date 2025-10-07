@@ -5,7 +5,7 @@ const cookieOpts = {
   httpOnly: true, // no accesible desde JS
   sameSite: 'Lax',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
+  maxAge: 1000 * 60 * 60 * 24 * 7, // 1 semana
   path: '/'
 }
 

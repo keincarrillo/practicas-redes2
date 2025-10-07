@@ -13,7 +13,7 @@ const isHandshake = line => {
     if (j && typeof j === 'object') {
       if (typeof j.message === 'string' && /bienvenido/i.test(j.message))
         return true
-      if (j.event === 'welcome') return true
+      if (j.event === 'bienvenido') return true
     }
   } catch {}
   return false
