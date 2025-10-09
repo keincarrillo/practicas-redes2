@@ -1,6 +1,5 @@
 # src/socket/server.py
 import socket
-import os
 import threading
 from dotenv import load_dotenv
 from handlers.handlerClient import manejar_cliente
