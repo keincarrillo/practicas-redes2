@@ -7,18 +7,6 @@ const SESSION_IDLE_MS = parseInt(process.env.SESSION_IDLE_MS || '120000', 10)
 
 const sessions = new Map()
 
-const isHandshake = line => {
-  try {
-    const j = JSON.parse(line)
-    if (j && typeof j === 'object') {
-      if (typeof j.message === 'string' && /bienvenido/i.test(j.message))
-        return true
-      if (j.event === 'bienvenido') return true
-    }
-  } catch {}
-  return false
-}
-
 const createSession = sid => {
   const state = {
     id: sid,
@@ -54,7 +42,7 @@ const createSession = sid => {
         state.reader = new LineReader(sock)
 
         state.reader.on('line', line => {
-          if (isHandshake(line)) return
+          //if (isHandshake(line)) return
 
           const current = state.queue[0]
           if (!current) return
