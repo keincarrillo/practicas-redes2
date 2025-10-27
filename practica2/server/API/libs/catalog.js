@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { CATALOG_FILE, MUSIC_DIR } from '../utils/paths.js'
+import { CATALOG_FILE, COVER_DIR, MUSIC_DIR } from '../utils/paths.js'
 
 // Lee y parsea catalog.json
 const loadCatalog = () => {
@@ -32,7 +32,7 @@ const getSongFilePath = song => {
 
 // Dado un objeto cancion, devuelve la ruta absoluta al cover(portada de la cancion)
 const getCoverFilePath = song => {
-  return path.join(MUSIC_DIR, song.cover || '')
+  return path.join(COVER_DIR, song.cover || '')
 }
 
 export { loadCatalog, getSongById, getSongFilePath, getCoverFilePath }
