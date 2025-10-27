@@ -1,0 +1,19 @@
+{
+  "name": "api",
+  "module": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "bun index.js",
+    "dev": "bun --watch index.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
