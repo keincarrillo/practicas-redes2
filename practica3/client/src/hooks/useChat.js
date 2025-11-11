@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { WS_URL } from '../utils/constants'
 
 export function useChat() {
   const [username, setUsername] = useState('')
@@ -22,7 +23,7 @@ export function useChat() {
   const connect = name => {
     if (socketRef.current) return
 
-    const ws = new WebSocket('ws://localhost:8080/ws/chat')
+    const ws = new WebSocket(WS_URL)
     socketRef.current = ws
 
     ws.onopen = () => {
