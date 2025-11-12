@@ -123,9 +123,15 @@ export function useChat() {
     send({ type: 'sticker', room: currentRoom, content: sticker })
   }
 
-  const sendAudio = label => {
+  const sendAudio = audioData => {
     if (!currentRoom) return
-    send({ type: 'audio', room: currentRoom, content: label })
+    send({
+      type: 'audio',
+      room: currentRoom,
+      audioName: audioData.name,
+      audioType: audioData.type,
+      audioData: audioData.data,
+    })
   }
 
   return {

@@ -9,6 +9,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
@@ -50,7 +51,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             case "message" -> handleMessage(session, root, "message");
             case "private_message" -> handlePrivateMessage(session, root);
             case "sticker" -> handleMessage(session, root, "sticker");
-            case "audio" -> handleMessage(session, root, "audio");
+            case "audio" -> handleAudioMessage(session, root);
             default -> sendError(session, "Tipo no soportado: " + type);
         }
     }
@@ -143,6 +144,36 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         payload.put("room", room);
         payload.put("from", username);
         payload.put("content", content);
+
+        broadcastToRoom(room, payload);
+    }
+
+    private void handleAudioMessage(WebSocketSession session, JsonNode root) throws IOException {
+        String username = requireLogin(session);
+        if (username == null) return;
+
+        String room = root.path("room").asText("").trim();
+        String audioName = root.path("audioName").asText("").trim();
+        String audioType = root.path("audioType").asText("").trim();
+        String audioData = root.path("audioData").asText("").trim();
+
+        if (room.isEmpty() || audioData.isEmpty()) {
+            sendError(session, "Faltan datos para el audio");
+            return;
+        }
+        if (!chatState.usersOfRoom(room).contains(username)) {
+            sendError(session, "No estás en la sala " + room);
+            return;
+        }
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("type", "audio");
+        payload.put("room", room);
+        payload.put("from", username);
+        payload.put("audioName", audioName);
+        payload.put("audioType", audioType);
+        payload.put("audioData", audioData);
+        payload.put("content", audioName); // Para compatibilidad
 
         broadcastToRoom(room, payload);
     }

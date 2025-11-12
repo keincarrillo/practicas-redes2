@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import Button from '../ui/Button'
-import { STICKERS, AUDIOS } from '../../utils/constants'
+import { STICKERS } from '../../utils/constants'
 
 export default function ChatInput({
   onSend,
@@ -12,7 +12,7 @@ export default function ChatInput({
 }) {
   const [message, setMessage] = useState('')
   const [showStickers, setShowStickers] = useState(false)
-  const [showAudios, setShowAudios] = useState(false)
+  const audioInputRef = useRef(null)
 
   const handleSubmit = e => {
     e.preventDefault()
@@ -28,9 +28,51 @@ export default function ChatInput({
     setShowStickers(false)
   }
 
-  const handleAudio = audio => {
-    onAudio(audio)
-    setShowAudios(false)
+  const handleAudioSelect = async e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validar que sea un archivo de audio
+    if (!file.type.startsWith('audio/')) {
+      alert('Por favor selecciona un archivo de audio válido')
+      return
+    }
+
+    // Limitar tamaño a 2MB (reducido para evitar problemas)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('El archivo de audio es muy grande. Máximo 2MB')
+      return
+    }
+
+    try {
+      // Convertir a base64
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1]
+        console.log(
+          'Audio cargado:',
+          file.name,
+          'Tamaño base64:',
+          base64.length
+        )
+        onAudio({
+          name: file.name,
+          type: file.type,
+          data: base64,
+        })
+      }
+      reader.onerror = () => {
+        console.error('Error al leer el archivo')
+        alert('Error al leer el archivo de audio')
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Error al procesar el audio:', error)
+      alert('Error al cargar el archivo de audio')
+    }
+
+    // Limpiar input
+    e.target.value = ''
   }
 
   return (
@@ -48,7 +90,6 @@ export default function ChatInput({
             className="relative"
             onClick={() => {
               setShowStickers(!showStickers)
-              setShowAudios(false)
             }}
             disabled={disabled}
           >
@@ -76,17 +117,23 @@ export default function ChatInput({
           )}
         </div>
 
-        {/* Audios */}
+        {/* Audio file upload */}
         <div className="relative">
+          <input
+            ref={audioInputRef}
+            type="file"
+            accept="audio/*"
+            onChange={handleAudioSelect}
+            className="hidden"
+            disabled={disabled}
+          />
           <Button
             type="button"
             variant="ghost"
             size="md"
-            onClick={() => {
-              setShowAudios(!showAudios)
-              setShowStickers(false)
-            }}
+            onClick={() => audioInputRef.current?.click()}
             disabled={disabled}
+            title="Enviar archivo de audio"
           >
             <svg
               className="w-5 h-5"
@@ -102,31 +149,6 @@ export default function ChatInput({
               />
             </svg>
           </Button>
-
-          {showAudios && (
-            <div className="absolute bottom-full left-0 mb-2 p-3 bg-slate-800/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700 animate-[slideUp_0.2s_ease-out] min-w-[220px] z-50">
-              <div className="mb-2 px-1">
-                <p className="text-xs font-semibold text-slate-400">Audios</p>
-              </div>
-              <div className="space-y-1">
-                {AUDIOS.map(a => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    className="w-full text-left px-4 py-3 hover:bg-slate-700/50 rounded-xl transition-all text-sm flex items-center gap-3 group"
-                    onClick={() => handleAudio(a.id)}
-                  >
-                    <span className="text-2xl transition-transform group-hover:scale-125">
-                      {a.emoji}
-                    </span>
-                    <span className="text-slate-300 font-medium">
-                      {a.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Message input */}

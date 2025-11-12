@@ -14,7 +14,7 @@ import java.util.Set;
 public class UdpChatServer {
 
     private static final int PORT = 5000;
-    private static final int BUFFER_SIZE = 4096;
+    private static final int BUFFER_SIZE = 65507; // Tamaño máximo de datagrama UDP
 
     private final ChatState chatState;
     private DatagramSocket socket;
@@ -181,15 +181,18 @@ public class UdpChatServer {
     }
 
     private void handleAudio(String raw, InetSocketAddress sender) {
+        // Formato: AUD <sala> <usuario> <nombre>|<tipo>|<base64_data>
         String[] p = raw.split(" ", 4);
         if (p.length < 4) {
-            send("ERR Uso: AUD <sala> <usuario> <label>", sender);
+            send("ERR Uso: AUD <sala> <usuario> <nombre>|<tipo>|<base64>", sender);
             return;
         }
         String room = p[1];
         String from = p[2];
-        String label = p[3];
-        broadcast(room, "AUD " + room + " " + from + " " + label);
+        String audioInfo = p[3];
+
+        // Broadcast del audio a toda la sala
+        broadcast(room, "AUD " + room + " " + from + " " + audioInfo);
     }
 
     private void broadcast(String room, String msg) {

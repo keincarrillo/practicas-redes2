@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import Badge from '../ui/Badge'
 
 export default function Message({ message, currentUser }) {
   const isOwn = message.from === currentUser
   const isSystem = message.type === 'system'
+  const audioRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(false)
 
   if (isSystem) {
     return (
@@ -31,6 +33,23 @@ export default function Message({ message, currentUser }) {
   const isPrivate = message.type === 'private_message'
   const isSticker = message.type === 'sticker'
   const isAudio = message.type === 'audio'
+
+  const handlePlayAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+        setIsPlaying(false)
+      } else {
+        audioRef.current.play().catch(error => {
+          console.error('Error al reproducir audio:', error)
+          alert('No se pudo reproducir el audio')
+          setIsPlaying(false)
+        })
+        setIsPlaying(true)
+      }
+    }
+  }
 
   return (
     <div
@@ -106,15 +125,48 @@ export default function Message({ message, currentUser }) {
               {message.content}
             </span>
           ) : isAudio ? (
-            <div className="flex items-center gap-2">
-              <div
-                className={`
-                w-8 h-8 rounded-full flex items-center justify-center
-                ${isOwn ? 'bg-white/20' : 'bg-slate-600/50'}
-              `}
-              >
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePlayAudio}
+                  className={`
+                    w-10 h-10 rounded-full flex items-center justify-center
+                    transition-all hover:scale-110
+                    ${
+                      isOwn
+                        ? 'bg-white/20 hover:bg-white/30'
+                        : 'bg-slate-600/50 hover:bg-slate-600'
+                    }
+                  `}
+                >
+                  {isPlaying ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5 ml-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  )}
+                </button>
+                <div className="flex-1">
+                  <p className="text-sm font-medium truncate max-w-[200px]">
+                    {message.audioName || 'Audio'}
+                  </p>
+                  <p className="text-xs opacity-70">
+                    {message.audioType?.split('/')[1]?.toUpperCase() || 'AUDIO'}
+                  </p>
+                </div>
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -127,7 +179,19 @@ export default function Message({ message, currentUser }) {
                   />
                 </svg>
               </div>
-              <span className="text-sm italic">Audio: {message.content}</span>
+              {isAudio && message.audioData && (
+                <audio
+                  ref={audioRef}
+                  onEnded={() => setIsPlaying(false)}
+                  onPause={() => setIsPlaying(false)}
+                  className="hidden"
+                >
+                  <source
+                    src={`data:${message.audioType};base64,${message.audioData}`}
+                    type={message.audioType}
+                  />
+                </audio>
+              )}
             </div>
           ) : (
             <p className="text-sm leading-relaxed break-words">
