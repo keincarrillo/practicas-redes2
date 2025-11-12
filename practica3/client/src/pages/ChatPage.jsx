@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import Sidebar from '../components/sidebar/Sidebar'
 import ChatHeader from '../components/chat/ChatHeader'
 import MessageList from '../components/chat/MessageList'
@@ -38,15 +38,12 @@ export default function ChatPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
-      {/* Animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      {/* Content */}
       <div className="relative flex w-full">
-        {/* Sidebar */}
         <Sidebar
           username={username}
           rooms={rooms}
@@ -55,7 +52,6 @@ export default function ChatPage({
           onJoinRoom={onJoinRoom}
         />
 
-        {/* Main chat area */}
         <main className="flex-1 flex flex-col">
           <ChatHeader
             currentRoom={currentRoom}
@@ -64,14 +60,12 @@ export default function ChatPage({
           />
 
           <div className="flex-1 flex overflow-hidden">
-            {/* Messages */}
             <MessageList
               messages={currentMessages}
               currentUser={username}
               currentRoom={currentRoom}
             />
 
-            {/* User list */}
             {currentRoom && (
               <aside className="w-64 border-l border-slate-700/50 bg-slate-800/20 backdrop-blur-sm flex flex-col animate-[slideIn_0.3s_ease-out]">
                 <div className="p-4 border-b border-slate-700/50">
@@ -126,7 +120,6 @@ export default function ChatPage({
             )}
           </div>
 
-          {/* Input */}
           <ChatInput
             onSend={handleSend}
             onSticker={onSendSticker}

@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* Custom animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -32,7 +31,6 @@
   }
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -53,23 +51,19 @@
   background: rgb(71 85 105 / 0.8);
 }
 
-/* Selection colors */
 ::selection {
   background-color: rgb(16 185 129 / 0.3);
   color: rgb(209 250 229);
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Remove focus outline for mouse users */
 *:focus:not(:focus-visible) {
   outline: none;
 }
 
-/* Custom focus styles for keyboard navigation */
 *:focus-visible {
   outline: 2px solid rgb(16 185 129);
   outline-offset: 2px;

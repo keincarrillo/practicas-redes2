@@ -1,4 +1,3 @@
-import React from 'react'
 import Badge from '../ui/Badge'
 
 export default function UserList({
@@ -55,7 +54,6 @@ export default function UserList({
               group
             `}
           >
-            {/* Avatar */}
             <div
               className={`
               flex-shrink-0 w-8 h-8 rounded-full

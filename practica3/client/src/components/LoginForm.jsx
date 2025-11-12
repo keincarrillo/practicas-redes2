@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import Button from './ui/Button'
 import Input from './ui/Input'
 
@@ -13,7 +13,6 @@ export default function LoginForm({ onLogin }) {
     if (trimmed) {
       setIsLoading(true)
 
-      // Simular pequeña delay para mejor UX
       setTimeout(() => {
         onLogin(trimmed)
         setIsLoading(false)
@@ -23,7 +22,6 @@ export default function LoginForm({ onLogin }) {
 
   return (
     <div className="bg-slate-800/50 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-slate-700/50 animate-[slideUp_0.5s_ease-out]">
-      {/* Logo/Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/50 animate-[bounce_1s_ease-in-out]">
           <svg
@@ -50,7 +48,6 @@ export default function LoginForm({ onLogin }) {
         </p>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
@@ -163,7 +160,6 @@ export default function LoginForm({ onLogin }) {
         </Button>
       </form>
 
-      {/* Features */}
       <div className="mt-6 pt-6 border-t border-slate-700/50 space-y-2">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <svg
@@ -215,7 +211,6 @@ export default function LoginForm({ onLogin }) {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="mt-6 pt-6 border-t border-slate-700/50">
         <p className="text-center text-xs text-slate-500">
           Práctica 3 - Aplicaciones para Sistemas en Red

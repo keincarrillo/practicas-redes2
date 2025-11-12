@@ -1,6 +1,4 @@
-import React from 'react'
 import RoomItem from './RoomItem'
-import Badge from '../ui/Badge'
 
 export default function RoomList({ rooms, currentRoom, onJoinRoom }) {
   if (rooms.length === 0) {

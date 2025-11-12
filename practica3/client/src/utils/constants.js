@@ -32,5 +32,6 @@ export const SUPPORTED_AUDIO_FORMATS = [
   'audio/m4a',
 ]
 
-// Tamaño máximo de archivo de audio (5MB)
-export const MAX_AUDIO_SIZE = 5 * 1024 * 1024
+export const MAX_AUDIO_SIZE = 30 * 1024 * 1024
+
+export const ESTIMATED_SIZE_PER_MINUTE = 2.4 * 1024 * 1024

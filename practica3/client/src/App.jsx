@@ -1,4 +1,3 @@
-import React from 'react'
 import { useChat } from './hooks/useChat'
 import LoginPage from './pages/LoginPage'
 import ChatPage from './pages/ChatPage'

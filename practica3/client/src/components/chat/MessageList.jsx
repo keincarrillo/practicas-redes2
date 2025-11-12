@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import Message from './Message'
 
 export default function MessageList({ messages, currentUser, currentRoom }) {

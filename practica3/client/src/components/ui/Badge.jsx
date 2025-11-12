@@ -1,5 +1,3 @@
-import React from 'react'
-
 const variants = {
   success: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
   info: 'bg-blue-500/20 text-blue-400 border-blue-500/50',

@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import Button from '../ui/Button'
-import { STICKERS } from '../../utils/constants'
+import { STICKERS, MAX_AUDIO_SIZE } from '../../utils/constants'
 
 export default function ChatInput({
   onSend,
@@ -12,6 +12,7 @@ export default function ChatInput({
 }) {
   const [message, setMessage] = useState('')
   const [showStickers, setShowStickers] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const audioInputRef = useRef(null)
 
   const handleSubmit = e => {
@@ -28,6 +29,12 @@ export default function ChatInput({
     setShowStickers(false)
   }
 
+  const formatFileSize = bytes => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+  }
+
   const handleAudioSelect = async e => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -38,40 +45,51 @@ export default function ChatInput({
       return
     }
 
-    // Limitar tamaño a 2MB (reducido para evitar problemas)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('El archivo de audio es muy grande. Máximo 2MB')
+    // Validar tamaño
+    if (file.size > MAX_AUDIO_SIZE) {
+      const maxSizeMB = (MAX_AUDIO_SIZE / (1024 * 1024)).toFixed(0)
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
+      alert(
+        `El archivo es demasiado grande (${fileSizeMB} MB).\n` +
+          `Tamaño máximo: ${maxSizeMB} MB`
+      )
       return
     }
 
+    setIsProcessing(true)
+
     try {
-      // Convertir a base64
       const reader = new FileReader()
       reader.onload = () => {
         const base64 = reader.result.split(',')[1]
-        console.log(
-          'Audio cargado:',
-          file.name,
-          'Tamaño base64:',
-          base64.length
-        )
+        const sizeKB = ((base64.length * 0.75) / 1024).toFixed(2)
+
+        console.log('[ChatInput] Audio cargado:')
+        console.log('  - Nombre:', file.name)
+        console.log('  - Tipo:', file.type)
+        console.log('  - Tamaño original:', formatFileSize(file.size))
+        console.log('  - Tamaño base64:', sizeKB, 'KB')
+
         onAudio({
           name: file.name,
           type: file.type,
           data: base64,
         })
+
+        setIsProcessing(false)
       }
       reader.onerror = () => {
-        console.error('Error al leer el archivo')
+        console.error('[ChatInput] Error al leer el archivo')
         alert('Error al leer el archivo de audio')
+        setIsProcessing(false)
       }
       reader.readAsDataURL(file)
     } catch (error) {
-      console.error('Error al procesar el audio:', error)
+      console.error('[ChatInput] Error al procesar el audio:', error)
       alert('Error al cargar el archivo de audio')
+      setIsProcessing(false)
     }
 
-    // Limpiar input
     e.target.value = ''
   }
 
@@ -91,7 +109,7 @@ export default function ChatInput({
             onClick={() => {
               setShowStickers(!showStickers)
             }}
-            disabled={disabled}
+            disabled={disabled || isProcessing}
           >
             <span className="text-xl">😊</span>
           </Button>
@@ -117,7 +135,6 @@ export default function ChatInput({
           )}
         </div>
 
-        {/* Audio file upload */}
         <div className="relative">
           <input
             ref={audioInputRef}
@@ -125,29 +142,51 @@ export default function ChatInput({
             accept="audio/*"
             onChange={handleAudioSelect}
             className="hidden"
-            disabled={disabled}
+            disabled={disabled || isProcessing}
           />
           <Button
             type="button"
             variant="ghost"
             size="md"
             onClick={() => audioInputRef.current?.click()}
-            disabled={disabled}
-            title="Enviar archivo de audio"
+            disabled={disabled || isProcessing}
+            title="Enviar archivo de audio (hasta 30MB)"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-              />
-            </svg>
+            {isProcessing ? (
+              <svg
+                className="w-5 h-5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                />
+              </svg>
+            )}
           </Button>
         </div>
 
@@ -159,11 +198,13 @@ export default function ChatInput({
             placeholder={
               !currentRoom
                 ? 'Selecciona una sala primero...'
+                : isProcessing
+                ? 'Procesando audio...'
                 : pmTarget
                 ? `Mensaje privado para ${pmTarget}...`
                 : 'Escribe un mensaje...'
             }
-            disabled={disabled}
+            disabled={disabled || isProcessing}
             className="w-full px-4 py-3 rounded-xl bg-slate-700/50 backdrop-blur-sm border-2 border-slate-600/50 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
             autoComplete="off"
           />
@@ -189,10 +230,9 @@ export default function ChatInput({
           )}
         </div>
 
-        {/* Send button */}
         <Button
           type="submit"
-          disabled={disabled || !message.trim()}
+          disabled={disabled || !message.trim() || isProcessing}
           size="md"
           className="px-6"
         >
@@ -211,6 +251,26 @@ export default function ChatInput({
           </svg>
         </Button>
       </div>
+
+      {/* Info sobre límite de tamaño */}
+      {!disabled && !isProcessing && (
+        <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1">
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Los archivos de audio pueden pesar hasta 30MB (~12 minutos de música)
+        </div>
+      )}
     </form>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import Badge from '../ui/Badge'
 
 export default function Message({ message, currentUser }) {
@@ -58,7 +58,6 @@ export default function Message({ message, currentUser }) {
         ${isOwn ? 'flex-row-reverse' : 'flex-row'}
       `}
     >
-      {/* Avatar */}
       <div
         className={`
         flex-shrink-0 w-10 h-10 rounded-full

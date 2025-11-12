@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function Input({ className = '', icon, ...props }) {
   return (
     <div className="relative">

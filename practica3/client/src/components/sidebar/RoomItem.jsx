@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function RoomItem({ room, isActive, onClick }) {
   return (
     <button
@@ -17,7 +15,6 @@ export default function RoomItem({ room, isActive, onClick }) {
         }
       `}
     >
-      {/* Animated background effect */}
       <div
         className={`
         absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-teal-500/0
@@ -56,7 +53,6 @@ export default function RoomItem({ room, isActive, onClick }) {
         </svg>
       </div>
 
-      {/* Room info */}
       <div className="relative z-10 flex-1 min-w-0">
         <p
           className={`
@@ -84,7 +80,6 @@ export default function RoomItem({ room, isActive, onClick }) {
         </p>
       </div>
 
-      {/* Active indicator / Arrow */}
       {isActive ? (
         <div className="relative z-10 flex items-center gap-2">
           <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />

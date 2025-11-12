@@ -22,16 +22,21 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(chatWebSocketHandler, "/ws/chat")
                 .setAllowedOrigins("*");
     }
-    
+
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
         ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
 
-        container.setMaxTextMessageBufferSize(10 * 1024 * 1024);
+        container.setMaxTextMessageBufferSize(50 * 1024 * 1024);
 
-        container.setMaxBinaryMessageBufferSize(10 * 1024 * 1024);
+        container.setMaxBinaryMessageBufferSize(50 * 1024 * 1024);
 
-        container.setMaxSessionIdleTimeout(300000L);
+        container.setMaxSessionIdleTimeout(600000L);
+
+        System.out.println("[WS Config] Límites configurados:");
+        System.out.println("  - Max Text Message: 50MB");
+        System.out.println("  - Max Binary Message: 50MB");
+        System.out.println("  - Session Timeout: 10 minutos");
 
         return container;
     }

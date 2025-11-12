@@ -1,6 +1,7 @@
 package com.example.server.ws;
 
 import com.example.server.core.ChatState;
+import com.example.server.service.AudioTransferService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
@@ -9,20 +10,27 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Logger;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private final ChatState chatState;
+    private final AudioTransferService audioService;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ChatWebSocketHandler(ChatState chatState) {
+    public ChatWebSocketHandler(ChatState chatState, AudioTransferService audioService) {
         this.chatState = chatState;
+        this.audioService = audioService;
+    }
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        System.out.println("[WS] Nueva conexión: " + session.getId());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        System.out.println("[WS] Conexión cerrada: " + session.getId());
         String username = chatState.removeSession(session);
         if (username != null) {
             List<String> rooms = chatState.roomsOfUser(username);
@@ -38,10 +46,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         JsonNode root = mapper.readTree(message.getPayload());
         String type = root.path("type").asText(null);
+
         if (type == null) {
             sendError(session, "Mensaje sin 'type'");
             return;
         }
+
+        System.out.println("[WS] Mensaje recibido: " + type + " de " + session.getId());
 
         switch (type) {
             case "login" -> handleLogin(session, root);
@@ -52,6 +63,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             case "private_message" -> handlePrivateMessage(session, root);
             case "sticker" -> handleMessage(session, root, "sticker");
             case "audio" -> handleAudioMessage(session, root);
+            case "audio_ack" -> handleAudioAck(session, root);
             default -> sendError(session, "Tipo no soportado: " + type);
         }
     }
@@ -70,6 +82,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         });
 
         chatState.registerSession(session, username);
+        System.out.println("[WS] Usuario logueado: " + username);
 
         send(session, Map.of(
                 "type", "login_ok",
@@ -90,6 +103,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
 
         chatState.createRoom(room);
+        System.out.println("[WS] Sala creada: " + room);
         broadcastRooms();
     }
 
@@ -104,6 +118,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
 
         chatState.joinRoom(username, room);
+        System.out.println("[WS] " + username + " se unió a " + room);
         broadcastUsers(room);
         broadcastSystem(room, username + " se unió a la sala");
     }
@@ -119,6 +134,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
 
         chatState.leaveRoom(username, room);
+        System.out.println("[WS] " + username + " salió de " + room);
         broadcastUsers(room);
         broadcastSystem(room, username + " salió de la sala");
     }
@@ -166,16 +182,33 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("type", "audio");
-        payload.put("room", room);
-        payload.put("from", username);
-        payload.put("audioName", audioName);
-        payload.put("audioType", audioType);
-        payload.put("audioData", audioData);
-        payload.put("content", audioName); // Para compatibilidad
+        try {
+            byte[] decoded = Base64.getDecoder().decode(audioData);
+            if (decoded.length > 30 * 1024 * 1024) {
+                sendError(session, "El archivo de audio es demasiado grande (máx 30MB)");
+                return;
+            }
 
-        broadcastToRoom(room, payload);
+            System.out.println("[WS] Iniciando transferencia de audio: " + audioName +
+                    " (" + decoded.length + " bytes)");
+
+            audioService.startAudioTransfer(session, room, audioName, audioType, audioData);
+
+        } catch (IllegalArgumentException e) {
+            sendError(session, "Datos de audio inválidos");
+        }
+    }
+
+    private void handleAudioAck(WebSocketSession session, JsonNode root) throws IOException {
+        String transferId = root.path("transferId").asText("");
+        int seq = root.path("seq").asInt(-1);
+
+        if (transferId.isEmpty() || seq < 0) {
+            sendError(session, "ACK inválido");
+            return;
+        }
+
+        audioService.handleAck(transferId, seq);
     }
 
     private void handlePrivateMessage(WebSocketSession session, JsonNode root) throws IOException {
@@ -221,6 +254,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void sendError(WebSocketSession session, String msg) throws IOException {
+        System.err.println("[WS] Error: " + msg);
         send(session, Map.of("type", "error", "content", msg));
     }
 
