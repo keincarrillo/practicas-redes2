@@ -39,19 +39,17 @@ export default function ChatInput({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validar que sea un archivo de audio
     if (!file.type.startsWith('audio/')) {
       alert('Por favor selecciona un archivo de audio válido')
       return
     }
 
-    // Validar tamaño
     if (file.size > MAX_AUDIO_SIZE) {
       const maxSizeMB = (MAX_AUDIO_SIZE / (1024 * 1024)).toFixed(0)
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
       alert(
         `El archivo es demasiado grande (${fileSizeMB} MB).\n` +
-          `Tamaño máximo: ${maxSizeMB} MB`
+          `Tamaño maximo: ${maxSizeMB} MB`
       )
       return
     }
@@ -252,7 +250,6 @@ export default function ChatInput({
         </Button>
       </div>
 
-      {/* Info sobre límite de tamaño */}
       {!disabled && !isProcessing && (
         <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1">
           <svg
@@ -268,7 +265,6 @@ export default function ChatInput({
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          Los archivos de audio pueden pesar hasta 30MB (~12 minutos de música)
         </div>
       )}
     </form>

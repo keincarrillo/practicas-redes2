@@ -1,4 +1,3 @@
-import React from 'react'
 import CreateRoomForm from './CreateRoomForm'
 import RoomList from './RoomList'
 import Badge from '../ui/Badge'
@@ -29,10 +28,8 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Create room form */}
       <CreateRoomForm onCreateRoom={onCreateRoom} />
 
-      {/* Rooms list */}
       <div className="flex-1 overflow-y-auto p-4">
         <h3 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">

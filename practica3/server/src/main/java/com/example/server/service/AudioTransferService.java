@@ -14,7 +14,7 @@ import java.util.concurrent.*;
 public class AudioTransferService {
 
     private static final int CHUNK_SIZE = 32768; // 32KB por paquete (mejor para archivos grandes)
-    private static final int WINDOW_SIZE = 10; // Ventana más grande para mejor throughput
+    private static final int WINDOW_SIZE = 10; 
     private static final long TIMEOUT_MS = 2000; // 2 segundos de timeout
 
     private final ChatState chatState;
@@ -176,10 +176,10 @@ public class AudioTransferService {
                 }
             }
 
-            System.out.println("[AUDIO] Notificación de completado enviada");
+            System.out.println("[AUDIO] Notificacion de completado enviada");
 
         } catch (IOException e) {
-            System.err.println("[AUDIO] Error en notificación de completado: " + e.getMessage());
+            System.err.println("[AUDIO] Error en notificacion de completado: " + e.getMessage());
         }
     }
 

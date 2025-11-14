@@ -33,7 +33,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
         container.setMaxSessionIdleTimeout(600000L);
 
-        System.out.println("[WS Config] Límites configurados:");
+        System.out.println("[WS Config] Limites configurados:");
         System.out.println("  - Max Text Message: 50MB");
         System.out.println("  - Max Binary Message: 50MB");
         System.out.println("  - Session Timeout: 10 minutos");

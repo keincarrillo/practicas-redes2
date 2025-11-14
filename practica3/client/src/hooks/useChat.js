@@ -108,7 +108,7 @@ export function useChat() {
   const handleAudioStart = msg => {
     const { transferId, room, from, audioName, audioType, totalChunks } = msg
 
-    // ✅ Si el audio lo mandé yo, no preparo transferencia (uso mi copia local)
+    // Si el audio lo mandé yo, no preparo transferencia (uso mi copia local)
     if (from === username) {
       return
     }
@@ -183,7 +183,7 @@ export function useChat() {
         reconstructAudio(transferId, transfer)
       } else {
         console.warn(
-          '[AUDIO] ⚠️ Faltan chunks:',
+          '[AUDIO] Faltan chunks:',
           transfer.totalChunks - transfer.receivedChunks
         )
       }
@@ -199,18 +199,16 @@ export function useChat() {
       })
 
       if (missingChunks.length > 0) {
-        console.error('[AUDIO] ❌ Faltan chunks:', missingChunks)
+        console.error('[AUDIO] Faltan chunks:', missingChunks)
         appendMessage(transfer.room, {
           type: 'system',
           room: transfer.room,
-          content: `❌ Error: faltan ${missingChunks.length} paquetes del audio "${transfer.audioName}"`,
+          content: `Error: faltan ${missingChunks.length} paquetes del audio "${transfer.audioName}"`,
         })
         delete audioTransfersRef.current[transferId]
         return
       }
 
-      // 🔴 Antes: const base64Complete = transfer.chunks.join('')
-      // ✅ Ahora: cada chunk viene en base64 -> lo decodificamos y unimos bytes, luego re-codificamos todo
       let binaryString = ''
       for (const chunkBase64 of transfer.chunks) {
         binaryString += atob(chunkBase64)
@@ -221,13 +219,12 @@ export function useChat() {
       const elapsed = Date.now() - transfer.startTime
       const sizeKB = ((base64Complete.length * 0.75) / 1024).toFixed(2)
 
-      console.log('[AUDIO] ✅ Audio reconstruido exitosamente:')
+      console.log('[AUDIO] Audio reconstruido exitosamente:')
       console.log('  - Nombre:', transfer.audioName)
       console.log('  - Tamaño:', sizeKB, 'KB')
       console.log('  - Tiempo:', `${elapsed}ms`)
       console.log('  - Chunks:', transfer.totalChunks)
 
-      // Mensaje con el audio final
       appendMessage(transfer.room, {
         type: 'audio',
         room: transfer.room,
@@ -238,20 +235,19 @@ export function useChat() {
         content: transfer.audioName,
       })
 
-      // Mensaje informativo
       appendMessage(transfer.room, {
         type: 'system',
         room: transfer.room,
-        content: `✅ Audio "${transfer.audioName}" recibido correctamente (${sizeKB} KB en ${elapsed}ms)`,
+        content: `Audio "${transfer.audioName}" recibido correctamente (${sizeKB} KB en ${elapsed}ms)`,
       })
 
       delete audioTransfersRef.current[transferId]
     } catch (error) {
-      console.error('[AUDIO] ❌ Error al reconstruir:', error)
+      console.error('[AUDIO] Error al reconstruir:', error)
       appendMessage(transfer.room, {
         type: 'system',
         room: transfer.room,
-        content: `❌ Error al procesar audio de ${transfer.from}: ${error.message}`,
+        content: `Error al procesar audio de ${transfer.from}: ${error.message}`,
       })
       delete audioTransfersRef.current[transferId]
     }
@@ -307,7 +303,6 @@ export function useChat() {
     console.log('[AUDIO] Tamaño:', sizeKB, 'KB')
     console.log('[AUDIO] Tipo:', audioData.type)
 
-    // Enviar al servidor (para que lo distribuya a los demás)
     send({
       type: 'audio',
       room: currentRoom,
@@ -316,7 +311,6 @@ export function useChat() {
       audioData: audioData.data,
     })
 
-    // ✅ Mostrar el audio inmediatamente en el chat del emisor
     appendMessage(currentRoom, {
       type: 'audio',
       room: currentRoom,
@@ -327,7 +321,6 @@ export function useChat() {
       content: audioData.name,
     })
 
-    // (Opcional, si quieres mantener el log actual)
     appendMessage(currentRoom, {
       type: 'system',
       room: currentRoom,

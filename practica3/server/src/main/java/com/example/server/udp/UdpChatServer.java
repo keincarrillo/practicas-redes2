@@ -14,7 +14,7 @@ import java.util.Set;
 public class UdpChatServer {
 
     private static final int PORT = 5000;
-    private static final int BUFFER_SIZE = 65507; // Tamaño máximo de datagrama UDP
+    private static final int BUFFER_SIZE = 65507; // Tamaño maximo de datagrama UDP
 
     private final ChatState chatState;
     private DatagramSocket socket;
