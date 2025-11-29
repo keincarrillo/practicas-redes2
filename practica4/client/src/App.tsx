@@ -4,11 +4,9 @@ import { gsap } from 'gsap'
 
 import { Input } from './components/Input'
 import { Textarea } from './components/Textarea'
+import { onSubmit } from './api/api'
 
-type HttpRequestFormData = {
-  peticion: string
-  descripcion: string
-}
+import { type HttpRequestFormData } from './types/htttpType'
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -98,14 +96,6 @@ function App() {
       ctx.revert()
     }
   }, [])
-
-  const onSubmit = async (data: HttpRequestFormData) => {
-    try {
-      console.log('Datos del formulario:', data)
-    } catch (error) {
-      console.error('Error al enviar:', error)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pixie-green-50 via-pixie-green-100 to-pixie-green-200 flex items-center justify-center p-6">
