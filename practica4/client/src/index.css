@@ -1,1 +1,15 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-pixie-green-50: #f5faf3;
+  --color-pixie-green-100: #e5f6e2;
+  --color-pixie-green-200: #ccebc7;
+  --color-pixie-green-300: #91d386;
+  --color-pixie-green-400: #73c167;
+  --color-pixie-green-500: #50a542;
+  --color-pixie-green-600: #3e8732;
+  --color-pixie-green-700: #336b2a;
+  --color-pixie-green-800: #2b5625;
+  --color-pixie-green-900: #244720;
+  --color-pixie-green-950: #10260d;
+}
