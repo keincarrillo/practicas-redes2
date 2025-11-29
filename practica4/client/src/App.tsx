@@ -1,15 +1,29 @@
 import { useEffect, useRef } from 'react'
+import { useForm } from 'react-hook-form'
 import { gsap } from 'gsap'
 
 import { Input } from './components/Input'
 import { Textarea } from './components/Textarea'
 
+type HttpRequestFormData = {
+  peticion: string
+  descripcion: string
+}
+
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const titleRef = useRef<HTMLHeadingElement | null>(null)
   const subtitleRef = useRef<HTMLParagraphElement | null>(null)
-  const formRef = useRef<HTMLDivElement | null>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
   const buttonRef = useRef<HTMLButtonElement | null>(null)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm<HttpRequestFormData>({
+    mode: 'onSubmit'
+  })
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -85,6 +99,14 @@ function App() {
     }
   }, [])
 
+  const onSubmit = async (data: HttpRequestFormData) => {
+    try {
+      console.log('Datos del formulario:', data)
+    } catch (error) {
+      console.error('Error al enviar:', error)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pixie-green-50 via-pixie-green-100 to-pixie-green-200 flex items-center justify-center p-6">
       <div
@@ -103,28 +125,46 @@ function App() {
           </p>
         </div>
 
-        <div ref={formRef} className="max-w-md mx-auto">
+        <form
+          ref={formRef}
+          className="max-w-md mx-auto"
+          onSubmit={handleSubmit(onSubmit)}
+        >
           <Input
-            description="Tipo de peticion"
+            description="Tipo de petición"
             id="peticion"
-            name="peticion"
-            type="text"
+            {...register('peticion', {
+              required: 'El tipo de petición es requerido',
+              pattern: {
+                value: /^(GET|POST|PUT|DELETE)$/i,
+                message:
+                  'Debe ser un método HTTP válido (GET, POST, PUT, DELETE)'
+              }
+            })}
+            error={errors.peticion?.message}
           />
 
           <Textarea
             description="Cuerpo de la petición"
             id="descripcion"
-            name="descripcion"
+            {...register('descripcion', {
+              required: 'La descripción es requerida',
+              maxLength: {
+                value: 500,
+                message: 'La descripción no puede exceder 500 caracteres'
+              }
+            })}
+            error={errors.descripcion?.message}
           />
-
           <button
             ref={buttonRef}
             type="submit"
-            className="text-white bg-pixie-green-600 box-border border border-transparent hover:bg-pixie-green-700 focus:ring-4 focus:ring-pixie-green-300 shadow-xs font-medium leading-5 rounded-lg text-sm px-4 py-2.5 focus:outline-none w-full uppercase"
+            disabled={isSubmitting}
+            className="text-white bg-pixie-green-600 box-border border border-transparent hover:bg-pixie-green-700 focus:ring-4 focus:ring-pixie-green-300 shadow-xs font-medium leading-5 rounded-lg text-sm px-4 py-2.5 focus:outline-none w-full uppercase disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Enviar
+            {isSubmitting ? 'Enviando...' : 'Enviar'}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   )

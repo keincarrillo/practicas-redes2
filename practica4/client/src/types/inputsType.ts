@@ -1,9 +1,13 @@
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react'
+
 export type InputsProps = {
   description: string
+  error?: string
   containerClassName?: string
-} & React.InputHTMLAttributes<HTMLInputElement>
+} & InputHTMLAttributes<HTMLInputElement>
 
 export type TextareaProps = {
   description: string
+  error?: string
   containerClassName?: string
-} & React.TextareaHTMLAttributes<HTMLTextAreaElement>
+} & TextareaHTMLAttributes<HTMLTextAreaElement>
