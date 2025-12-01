@@ -1,16 +1,7 @@
 import { type HttpRequestFormData } from '../types/htttpType'
+import { type ApiResult } from '../types/apiType'
+import { BASE_URL } from '../config/config'
 
-const BASE_URL = 'http://localhost:8080'
-
-export interface ApiResult {
-  status: number
-  contentType: string
-  body: string
-}
-
-/**
- * Habla con el servidor Java y regresa la info de la respuesta.
- */
 export const onSubmit = async (
   data: HttpRequestFormData
 ): Promise<ApiResult | null> => {
@@ -21,7 +12,6 @@ export const onSubmit = async (
       return null
     }
 
-    // Separa método y ruta: "GET /texto"
     const [rawMethod, rawPath] = raw.split(/\s+/, 2)
     const method = (rawMethod ?? '').toUpperCase()
     const path = rawPath ?? '/texto'
@@ -60,7 +50,7 @@ export const onSubmit = async (
       body: bodyText,
     }
   } catch (error) {
-    console.error('Error al enviar la petición:', error)
+    console.error('Error al enviar la peticion:', error)
     return null
   }
 }

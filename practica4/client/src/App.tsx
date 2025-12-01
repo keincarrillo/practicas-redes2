@@ -1,180 +1,120 @@
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { gsap } from 'gsap'
+import { useContext } from 'react'
+import { PfContext } from './context/Context'
+import { BASE_URL } from './config/config'
+import type { HttpMethod } from './types/htttpType'
 
-import { Input } from './components/Input'
-import { Textarea } from './components/Textarea'
-import { onSubmit } from './api/api'
+const App = () => {
+  const ctx = useContext(PfContext)
 
-import { type HttpRequestFormData } from './types/htttpType'
-
-function App() {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const titleRef = useRef<HTMLHeadingElement | null>(null)
-  const subtitleRef = useRef<HTMLParagraphElement | null>(null)
-  const formRef = useRef<HTMLFormElement | null>(null)
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-
-  // ahora el textarea se usa para mostrar la respuesta
-  const [serverResponse, setServerResponse] = useState<string>('')
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<HttpRequestFormData>({
-    mode: 'onSubmit',
-  })
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(containerRef.current, {
-        scale: 0.8,
-        opacity: 0,
-        duration: 0.6,
-        ease: 'back.out(1.7)',
-      })
-
-      gsap.from(titleRef.current, {
-        y: -50,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.3,
-        ease: 'power3.out',
-      })
-
-      gsap.from(subtitleRef.current, {
-        y: -30,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.5,
-        ease: 'power3.out',
-      })
-
-      gsap.from('.form-field', {
-        x: -50,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 0.7,
-        ease: 'power2.out',
-      })
-
-      gsap.from(buttonRef.current, {
-        scale: 0,
-        opacity: 0,
-        duration: 0.5,
-        delay: 1.5,
-        ease: 'back.out(1.7)',
-      })
-    })
-
-    const button = buttonRef.current
-    if (!button) {
-      return () => ctx.revert()
-    }
-
-    const handleMouseEnter = () => {
-      gsap.to(button, {
-        scale: 1.05,
-        duration: 0.3,
-        ease: 'power2.out',
-      })
-    }
-
-    const handleMouseLeave = () => {
-      gsap.to(button, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-      })
-    }
-
-    button.addEventListener('mouseenter', handleMouseEnter)
-    button.addEventListener('mouseleave', handleMouseLeave)
-
-    return () => {
-      button.removeEventListener('mouseenter', handleMouseEnter)
-      button.removeEventListener('mouseleave', handleMouseLeave)
-      ctx.revert()
-    }
-  }, [])
-
-  const handleFormSubmit = async (data: HttpRequestFormData) => {
-    const result = await onSubmit(data)
-
-    if (!result) {
-      setServerResponse(
-        'No se pudo obtener respuesta del servidor. Revisa la consola.'
-      )
-      return
-    }
-
-    const formatted =
-      `Status: ${result.status}\n` +
-      `Content-Type: ${result.contentType}\n\n` +
-      `${result.body}`
-
-    setServerResponse(formatted)
+  if (!ctx) {
+    throw new Error('App debe estar envuelta por PfProvider')
   }
 
+  const {
+    containerRef,
+    titleRef,
+    method,
+    setMethod,
+    endpoint,
+    setEndpoint,
+    isLoading,
+    response,
+    error,
+    getStatusColor,
+    getStatusBg,
+    handleSend,
+  } = ctx
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pixie-green-50 via-pixie-green-100 to-pixie-green-200 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-pixie-green-50 via-pixie-green-100 to-pixie-green-200 p-6">
       <div
         ref={containerRef}
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 md:p-12 border-t-4 border-pixie-green-500"
+        className="max-w-5xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden"
       >
-        <div className="text-center mb-10">
-          <h2
+        <div className="bg-pixie-green-600 px-6 py-4">
+          <h1
             ref={titleRef}
-            className="text-3xl font-bold bg-gradient-to-r from-pixie-green-600 to-pixie-green-500 bg-clip-text text-transparent mb-2"
+            className="text-2xl font-bold text-white flex items-center gap-3"
           >
-            Petición HTTP
-          </h2>
-          <p ref={subtitleRef} className="text-gray-600">
-            Escribe el tipo de petición HTTP y revisa la respuesta del servidor
-          </p>
+            HTTP Client
+          </h1>
         </div>
 
-        <form
-          ref={formRef}
-          className="max-w-md mx-auto"
-          onSubmit={handleSubmit(handleFormSubmit)}
-        >
-          <Input
-            description="Tipo de petición"
-            id="peticion"
-            {...register('peticion', {
-              required: 'El tipo de petición es requerido',
-              pattern: {
-                value: /^(GET|POST|PUT|DELETE)(\s+\/\S*)?$/i,
-                message:
-                  'Debe iniciar con GET, POST, PUT o DELETE, por ejemplo: "GET /texto"',
-              },
-            })}
-            error={errors.peticion?.message}
-          />
+        <div className="p-6">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Peticion HTTP
+            </label>
 
-          {/* AHORA este Textarea muestra la respuesta del servidor */}
-          <Textarea
-            description="Respuesta del servidor"
-            id="respuesta-servidor"
-            name="respuesta-servidor"
-            readOnly
-            rows={7}
-            value={serverResponse}
-            error={undefined}
-          />
+            <div className="flex gap-2">
+              <select
+                value={method}
+                onChange={e => setMethod(e.target.value as HttpMethod)}
+                className="px-4 py-2.5 border-2 border-pixie-green-300 rounded-lg font-semibold text-pixie-green-700 bg-white hover:border-pixie-green-400 focus:outline-none focus:ring-2 focus:ring-pixie-green-300 cursor-pointer transition-colors"
+              >
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+              </select>
 
-          <button
-            ref={buttonRef}
-            type="submit"
-            disabled={isSubmitting}
-            className="text-white bg-pixie-green-600 box-border border border-transparent hover:bg-pixie-green-700 focus:ring-4 focus:ring-pixie-green-300 shadow-xs font-medium leading-5 rounded-lg text-sm px-4 py-2.5 focus:outline-none w-full uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Enviando...' : 'Enviar'}
-          </button>
-        </form>
+              <input
+                type="text"
+                value={endpoint}
+                onChange={e => setEndpoint(e.target.value)}
+                placeholder="/texto, /html, /json, /xml"
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-pixie-green-500 focus:outline-none focus:ring-2 focus:ring-pixie-green-200 transition-all"
+              />
+
+              <button
+                onClick={handleSend}
+                disabled={isLoading}
+                className="px-8 py-2.5 bg-pixie-green-600 hover:bg-pixie-green-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-pixie-green-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isLoading ? 'Enviando...' : 'Enviar'}
+              </button>
+            </div>
+
+            <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+              URL base: {BASE_URL}
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {response && (
+            <div className="space-y-4">
+              <div
+                className={`p-4 border-2 rounded-lg ${getStatusBg(
+                  response.status
+                )}`}
+              >
+                <p className={getStatusColor(response.status)}>
+                  {response.status}
+                </p>
+                <p>{response.contentType || 'N/A'}</p>
+              </div>
+
+              <div>
+                <pre className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg overflow-x-auto text-sm font-mono text-gray-800 max-h-96 overflow-y-auto">
+                  {response.body}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {!response && !error && !isLoading && (
+            <div className="text-center py-16">
+              <p className="text-gray-500 font-medium">
+                Presiona "Enviar" para hacer una peticion
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
