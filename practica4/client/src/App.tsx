@@ -100,7 +100,7 @@ const App = () => {
               </div>
 
               <div>
-                <pre className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg overflow-x-auto text-sm font-mono text-gray-800 max-h-96 overflow-y-auto">
+                <pre className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg overflow-x-auto text-md font-mono text-gray-800 max-h-96 overflow-y-auto">
                   {response.body}
                 </pre>
               </div>
