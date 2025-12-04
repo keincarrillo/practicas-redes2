@@ -128,7 +128,7 @@ const App = () => {
             ref={titleRef}
             className="text-2xl font-bold text-white flex items-center gap-3"
           >
-            🌐 HTTP Client
+            HTTP Cliente
           </h1>
         </div>
 
