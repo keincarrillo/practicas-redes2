@@ -22,4 +22,5 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Comando para arrancar el servidor
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-cp", "app.jar", "org.example.HttpServerPool"]
+

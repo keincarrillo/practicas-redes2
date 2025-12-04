@@ -17,7 +17,7 @@ public class HttpServerPool {
     static volatile int secondaryPort = -1;
     static final AtomicBoolean secondaryServerStarted = new AtomicBoolean(false);
 
-    static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
         String portEnv = System.getenv("PORT");
         primaryPort = (portEnv != null && !portEnv.isBlank())
                 ? Integer.parseInt(portEnv)
