@@ -1,0 +1,94 @@
+###############################################################################
+# NODE / EXPRESS / BUN
+###############################################################################
+
+# dependencias
+node_modules/
+bun.lockb
+bun.lock
+
+# builds / salida
+dist/
+build/
+.next/
+out/
+
+# env vars
+.env
+.env.*
+*.env
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+debug.log
+logs/
+*.log
+
+###############################################################################
+# PYTHON
+###############################################################################
+
+# cache python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# entornos virtuales
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+.python-version
+
+# metadata de paquetes python
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+pip-wheel-metadata/
+wheelhouse/
+
+# mypy / pyright / pytest cache
+.mypy_cache/
+.pytype/
+.pytest_cache/
+
+###############################################################################
+# EDITORES / SISTEMA
+###############################################################################
+
+# vscode / ideas locales del editor
+.vscode/
+.idea/
+
+# mac / windows basura
+.DS_Store
+Thumbs.db
+
+###############################################################################
+# TU PROYECTO ESPECIFICO
+###############################################################################
+
+# musica recibida por el receiver
+# estas son las rolas ya armadas en el server
+server/UDP/musicReceiver/
+server/UDP/music/
+
+# musica fuente local antes de mandar
+# (si tienes las canciones originales aqui)
+server/UDP/musicSender/
+
+# catalog.json es generado automaticamente por receiver.py
+# no lo queremos subir cada vez que cambie
+server/UDP/catalog.json
+
+# planeacion local de pruebas, temporales
+tmp/
+temp/
+*.tmp
+
