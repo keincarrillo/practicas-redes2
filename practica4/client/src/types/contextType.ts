@@ -1,4 +1,3 @@
-// types/contextType.ts
 import type {
   ReactNode,
   Dispatch,
@@ -12,9 +11,12 @@ export interface PfProviderProps {
   children: ReactNode
 }
 
+export type ViewMode = 'raw' | 'rendered'
+
 export interface PfContextValue {
   containerRef: MutableRefObject<HTMLDivElement | null>
   titleRef: MutableRefObject<HTMLHeadingElement | null>
+  iframeRef: MutableRefObject<HTMLIFrameElement | null>
 
   method: HttpMethod
   setMethod: Dispatch<SetStateAction<HttpMethod>>
@@ -26,8 +28,11 @@ export interface PfContextValue {
   setResponse: Dispatch<SetStateAction<ApiResult | null>>
   error: string
   setError: Dispatch<SetStateAction<string>>
+  viewMode: ViewMode
+  setViewMode: Dispatch<SetStateAction<ViewMode>>
 
   getStatusColor: (status: number) => string
   getStatusBg: (status: number) => string
+  shouldRenderContent: (contentType: string) => boolean
   handleSend: () => Promise<void>
 }

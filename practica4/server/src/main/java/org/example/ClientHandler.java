@@ -29,10 +29,9 @@ class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        int inUse = 0;
         boolean shouldRedirect = false;
 
-        // try with resources para cerrar socket y flujos automaticamente
+        // try-with-resources para cerrar socket y flujos automaticamente
         try (Socket socket = this.clientSocket;
              BufferedReader in = new BufferedReader(
                      new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
@@ -44,12 +43,12 @@ class ClientHandler implements Runnable {
 
             // pausa opcional para simular trabajo y acumular conexiones
             try {
-                Thread.sleep(3000);
+                Thread.sleep(500);
             } catch (InterruptedException ignored) {}
 
             // logica de conteo y arranque de servidor 2 solo en servidor principal
             if (fromPrimaryServer && activeConnections != null) {
-                inUse = activeConnections.incrementAndGet();
+                int inUse = activeConnections.incrementAndGet();
 
                 int threshold = Math.max(1, HttpServerPool.poolSize / 2);
                 System.out.println("[S1] Conexiones activas = " + inUse +
@@ -97,6 +96,9 @@ class ClientHandler implements Runnable {
                 HttpServerPool.handleRequest(out, method, path,
                         fromPrimaryServer ? "Servidor 1" : "Servidor 2");
             }
+
+            // por si acaso, nos aseguramos de enviar todo
+            out.flush();
 
         } catch (IOException e) {
             e.printStackTrace();
