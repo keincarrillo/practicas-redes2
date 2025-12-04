@@ -2,9 +2,11 @@ package org.example;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,24 +14,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HttpServerPool {
 
+    // numero de hilos que usara el servidor en el pool
     static int poolSize;
+    // puerto principal donde escucha el servidor 1
     static int primaryPort;
+    // puerto donde escuchara el servidor secundario, -1 indica sin inicializar
     static volatile int secondaryPort = -1;
+    // bandera atomica para saber si el servidor secundario ya se inicio
     static final AtomicBoolean secondaryServerStarted = new AtomicBoolean(false);
 
+    // cache para no leer la imagen en cada peticion y reutilizar la misma cadena
+    private static String cachedInlineImage;
+
     public static void main(String[] args) throws IOException {
+        // obtiene el puerto desde la variable de entorno port o usa 8080 por defecto
         String portEnv = System.getenv("PORT");
         primaryPort = (portEnv != null && !portEnv.isBlank())
                 ? Integer.parseInt(portEnv)
                 : 8080;
 
+        // obtiene el tamanio del pool desde la variable de entorno pool_size o usa 4
         String poolEnv = System.getenv("POOL_SIZE");
         poolSize = (poolEnv != null && !poolEnv.isBlank())
                 ? Integer.parseInt(poolEnv)
                 : 4;
 
+        // crea el socket del servidor principal
         ServerSocket serverSocket = new ServerSocket(primaryPort);
+        // crea el pool de hilos para atender las conexiones
         ExecutorService executor = Executors.newFixedThreadPool(poolSize);
+        // contador de conexiones activas en el servidor principal
         AtomicInteger activeConnections = new AtomicInteger(0);
 
         System.out.println("\n===========================================");
@@ -38,25 +52,30 @@ public class HttpServerPool {
         System.out.println("Pool size: " + poolSize);
         System.out.println("===========================================\n");
 
+        // bucle infinito que acepta clientes y los delega al pool
         while (true) {
             Socket clientSocket = serverSocket.accept();
             executor.submit(new ClientHandler(clientSocket, true, activeConnections));
         }
     }
 
-
+    // inicia el servidor secundario en otro puerto en un hilo separado
     static void startSecondaryServer() {
         new Thread(() -> {
             try {
+                // si secondaryPort es menor o igual a cero deja que el sistema asigne un puerto libre
                 int portToUse = (secondaryPort <= 0) ? 0 : secondaryPort;
                 ServerSocket serverSocket2 = new ServerSocket(portToUse);
+                // guarda el puerto real donde quedo escuchando el servidor secundario
                 secondaryPort = serverSocket2.getLocalPort();
+                // pool de hilos para atender conexiones del servidor secundario
                 ExecutorService executor2 = Executors.newFixedThreadPool(poolSize);
 
                 System.out.println("\n===========================================");
                 System.out.println("Servidor 2 iniciado en http://localhost:" + secondaryPort);
                 System.out.println("===========================================\n");
 
+                // bucle que acepta conexiones para el servidor secundario
                 while (true) {
                     Socket clientSocket = serverSocket2.accept();
                     executor2.submit(new ClientHandler(clientSocket, false, null));
@@ -68,9 +87,48 @@ public class HttpServerPool {
         }, "SecondaryServerThread").start();
     }
 
+    // genera la etiqueta img con la imagen jerry.png codificada en base64 y la guarda en cache
+    private static String getInlineImageTag() {
+        // si ya se construyo antes se reutiliza la cadena
+        if (cachedInlineImage != null) {
+            return cachedInlineImage;
+        }
+
+        // intenta leer el recurso jerry.png desde el classpath
+        try (InputStream in = HttpServerPool.class.getResourceAsStream("/jerry.png")) {
+            if (in == null) {
+                System.err.println("[WARN] No se encontró jerry.png en src/main/resources; se omitirá la imagen en /html.");
+                cachedInlineImage = "";
+                return cachedInlineImage;
+            }
+
+            // lee todos los bytes de la imagen
+            byte[] bytes = in.readAllBytes();
+            // codifica la imagen en base64
+            String base64 = Base64.getEncoder().encodeToString(bytes);
+
+            // arma la etiqueta img con data url lista para incrustarse en el html
+            cachedInlineImage =
+                    "<img src=\"data:image/png;base64," + base64 + "\" " +
+                            "alt=\"Imagen enviada desde el servidor\" " +
+                            "style=\"max-width: 100%; height: auto; border-radius: 16px; " +
+                            "box-shadow: 0 10px 25px rgba(0,0,0,0.3);\"/>";
+
+            return cachedInlineImage;
+        } catch (IOException e) {
+            // en caso de error se imprime la traza y se devuelve cadena vacia
+            e.printStackTrace();
+            cachedInlineImage = "";
+            return cachedInlineImage;
+        }
+    }
+
+    // construye y envia una respuesta http 307 que redirige al servidor secundario
     static void sendRedirect(BufferedWriter out, String path) throws IOException {
+        // url completa de destino en el servidor secundario
         String location = "http://localhost:" + secondaryPort + path;
 
+        // cuerpo html que muestra un mensaje y hace redireccion automatica por javascript
         String body = """
             <!DOCTYPE html>
             <html lang="es">
@@ -186,8 +244,10 @@ public class HttpServerPool {
             </html>
             """.formatted(location, location);
 
+        // convierte el cuerpo a bytes para poder calcular content-length
         byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
 
+        // escribe la linea de estado y los encabezados de redireccion
         out.write("HTTP/1.1 307 Temporary Redirect\r\n");
         out.write("Access-Control-Allow-Origin: *\r\n");
         out.write("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n");
@@ -203,12 +263,13 @@ public class HttpServerPool {
         System.out.println("[REDIRECT] Enviada redirección a: " + location);
     }
 
+    // procesa una peticion http y genera la respuesta segun el metodo y la ruta
     static void handleRequest(BufferedWriter out, String method,
                               String path, String serverName) throws IOException {
 
         System.out.println("[" + serverName + "] Petición: " + method + " " + path);
 
-        // Manejar preflight OPTIONS
+        // maneja las peticiones options usadas para preflight de cors
         if ("OPTIONS".equals(method)) {
             out.write("HTTP/1.1 204 No Content\r\n");
             out.write("Access-Control-Allow-Origin: *\r\n");
@@ -222,6 +283,7 @@ public class HttpServerPool {
             return;
         }
 
+        // si el metodo no es uno de los permitidos responde 405
         if (!("GET".equals(method) || "POST".equals(method)
                 || "PUT".equals(method) || "DELETE".equals(method))) {
 
@@ -245,13 +307,16 @@ public class HttpServerPool {
         String mimeType;
         String body;
 
+        // selecciona el contenido que se devolvera segun la ruta
         switch (path) {
             case "/texto":
+                // respuesta simple en texto plano
                 mimeType = "text/plain";
                 body = "[" + serverName + "] Metodo " + method + " - MIME text/plain";
                 break;
 
             case "/html":
+                // respuesta html con informacion del servidor e imagen incrustada
                 mimeType = "text/html";
                 body = """
                     <!DOCTYPE html>
@@ -499,6 +564,10 @@ public class HttpServerPool {
                                     </div>
                                 </div>
                             </div>
+
+                            <div style="margin-top: 24px; display: flex; justify-content: center;">
+                                %s
+                            </div>
                             
                             <div class="footer">
                                 <span id="timestamp"></span>
@@ -514,10 +583,11 @@ public class HttpServerPool {
                         </script>
                     </body>
                     </html>
-                    """.formatted(serverName, serverName, serverName, method);
+                    """.formatted(serverName, serverName, serverName, method, getInlineImageTag());
                 break;
 
             case "/json":
+                // construye una respuesta json simple con datos del servidor
                 mimeType = "application/json";
                 body = "{\"servidor\":\"" + serverName
                         + "\",\"metodo\":\"" + method
@@ -525,6 +595,7 @@ public class HttpServerPool {
                 break;
 
             case "/xml":
+                // construye una respuesta xml de ejemplo con varias etiquetas
                 mimeType = "application/xml";
                 body = """
                     <?xml version="1.0" encoding="UTF-8"?>
@@ -544,12 +615,15 @@ public class HttpServerPool {
                 break;
 
             default:
+                // mensaje por defecto cuando la ruta no existe
                 mimeType = "text/plain";
                 body = "Recurso no encontrado. Usa /texto, /html, /json o /xml";
         }
 
+        // convierte el cuerpo a bytes para fijar content-length
         byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
 
+        // escribe la respuesta http completa en el socket del cliente
         out.write("HTTP/1.1 200 OK\r\n");
         out.write("Access-Control-Allow-Origin: *\r\n");
         out.write("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n");
