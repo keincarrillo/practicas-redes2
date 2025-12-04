@@ -180,26 +180,6 @@ const App = () => {
                   <p className="font-bold text-red-700 mb-2">
                     Error de Conexión
                   </p>
-                  <pre className="text-sm text-red-600 whitespace-pre-wrap font-mono">
-                    {error}
-                  </pre>
-                  <div className="mt-3 p-3 bg-red-100 rounded text-xs text-red-800">
-                    <p className="font-semibold mb-1">💡 Soluciones:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Verifica que el servidor Java esté corriendo</li>
-                      <li>
-                        Ejecuta:{' '}
-                        <code className="bg-red-200 px-1 rounded">
-                          mvn exec:java
-                          -Dexec.mainClass="org.example.HttpServerPool"
-                        </code>
-                      </li>
-                      <li>Revisa que el puerto 8080 esté disponible</li>
-                      <li>
-                        Abre la consola del navegador (F12) para más detalles
-                      </li>
-                    </ul>
-                  </div>
                 </div>
               </div>
             </div>

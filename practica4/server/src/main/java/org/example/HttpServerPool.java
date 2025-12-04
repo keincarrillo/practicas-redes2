@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,27 +18,24 @@ public class HttpServerPool {
     static final AtomicBoolean secondaryServerStarted = new AtomicBoolean(false);
 
     static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(System.in);
+        String portEnv = System.getenv("PORT");
+        primaryPort = (portEnv != null && !portEnv.isBlank())
+                ? Integer.parseInt(portEnv)
+                : 8080;
 
-        System.out.print("Puerto del servidor 1 [8080]: ");
-        String line = scanner.nextLine().trim();
-        primaryPort = line.isEmpty() ? 8080 : Integer.parseInt(line);
-
-        System.out.print("Puerto del servidor 2 [auto]: ");
-        line = scanner.nextLine().trim();
-        secondaryPort = line.isEmpty() ? -1 : Integer.parseInt(line);
-
-        System.out.print("Tamaño del pool de conexiones del servidor 1 [4]: ");
-        line = scanner.nextLine().trim();
-        poolSize = line.isEmpty() ? 4 : Integer.parseInt(line);
+        String poolEnv = System.getenv("POOL_SIZE");
+        poolSize = (poolEnv != null && !poolEnv.isBlank())
+                ? Integer.parseInt(poolEnv)
+                : 4;
 
         ServerSocket serverSocket = new ServerSocket(primaryPort);
         ExecutorService executor = Executors.newFixedThreadPool(poolSize);
         AtomicInteger activeConnections = new AtomicInteger(0);
 
         System.out.println("\n===========================================");
-        System.out.println("Servidor 1 escuchando en http://localhost:" + primaryPort);
-        System.out.println("Rutas disponibles: /texto, /html, /json, /xml");
+        System.out.println("Servidor 1 escuchando en http://0.0.0.0:" + primaryPort);
+        System.out.println("Rutas: /texto, /html, /json, /xml");
+        System.out.println("Pool size: " + poolSize);
         System.out.println("===========================================\n");
 
         while (true) {
@@ -47,6 +43,7 @@ public class HttpServerPool {
             executor.submit(new ClientHandler(clientSocket, true, activeConnections));
         }
     }
+
 
     static void startSecondaryServer() {
         new Thread(() -> {
