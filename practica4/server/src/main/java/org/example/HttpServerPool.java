@@ -37,7 +37,7 @@ public class HttpServerPool {
         String poolEnv = System.getenv("POOL_SIZE");
         poolSize = (poolEnv != null && !poolEnv.isBlank())
                 ? Integer.parseInt(poolEnv)
-                : 4;
+                : 2;
 
         // crea el socket del servidor principal
         ServerSocket serverSocket = new ServerSocket(primaryPort);
@@ -64,7 +64,7 @@ public class HttpServerPool {
         new Thread(() -> {
             try {
                 // si secondaryPort es menor o igual a cero deja que el sistema asigne un puerto libre
-                int portToUse = (secondaryPort <= 0) ? 0 : secondaryPort;
+                int portToUse = (secondaryPort <= 0) ? 8081 : secondaryPort;
                 ServerSocket serverSocket2 = new ServerSocket(portToUse);
                 // guarda el puerto real donde quedo escuchando el servidor secundario
                 secondaryPort = serverSocket2.getLocalPort();
