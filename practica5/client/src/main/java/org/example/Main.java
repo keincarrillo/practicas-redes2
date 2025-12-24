@@ -27,7 +27,7 @@ public class Main {
     }
 
     private void showUI() {
-        JFrame frame = new JFrame("Aplicación WGET");
+        JFrame frame = new JFrame("Aplicacion WGET");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(780, 540);
         frame.setLocationRelativeTo(null);
@@ -47,7 +47,7 @@ public class Main {
 
     private JPanel buildTopPanel() {
         JPanel p = new JPanel(new GridBagLayout());
-        p.setBorder(BorderFactory.createTitledBorder("Configuración"));
+        p.setBorder(BorderFactory.createTitledBorder("Configuracion"));
 
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6, 6, 6, 6);
@@ -132,7 +132,7 @@ public class Main {
             return;
         }
         if (urlText.startsWith("https://")) {
-            append("⚠ Esta versión NIO no-bloqueante soporta solo http:// (HTTPS requiere SSLEngine).\n");
+            append("[ADVERTENCIA] Esta version NIO no bloqueante soporta solo http:// (HTTPS requiere SSLEngine).\n");
             return;
         }
 
@@ -147,7 +147,7 @@ public class Main {
             DownloadConfig cfg = new DownloadConfig(start, depth, conns, sameHost, outDir, 20000);
 
             logArea.setText("");
-            append("Configuración:\n");
+            append("Configuracion:\n");
             append("  URL: " + cfg.startUrl + "\n");
             append("  Profundidad: " + cfg.maxDepth + "\n");
             append("  Conexiones: " + cfg.maxConnections + "\n");
@@ -159,13 +159,13 @@ public class Main {
             engine.start(cfg);
 
         } catch (Exception ex) {
-            append("URL inválida: " + ex.getMessage() + "\n");
+            append("URL invalida: " + ex.getMessage() + "\n");
         }
     }
 
     private void onStop() {
         if (engine != null) engine.stop();
-        append("⏹ Deteniendo...\n");
+        append("[STOP] Deteniendo...\n");
     }
 
     private void setRunning(boolean isRunning) {
@@ -182,6 +182,7 @@ public class Main {
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
+    // implementacion de EngineListener para actualizar la interfaz
     private class SwingListener implements EngineListener {
         @Override public void onLog(String text) {
             SwingUtilities.invokeLater(() -> append(text));

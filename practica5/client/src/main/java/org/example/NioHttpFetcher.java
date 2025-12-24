@@ -9,6 +9,7 @@ import java.util.*;
 
 public class NioHttpFetcher {
 
+    // clase para encapsular el resultado de una peticion HTTP
     public static class Result {
         public final int statusCode;
         public final Map<String, String> headers;
@@ -21,6 +22,7 @@ public class NioHttpFetcher {
         }
     }
 
+    // realizar una peticion HTTP GET usando NIO no bloqueante
     public static Result fetch(URI uri, int timeoutMs) throws Exception {
         if (!"http".equalsIgnoreCase(uri.getScheme())) {
             throw new IllegalArgumentException("NIO fetch soporta solo http:// (no https://).");
@@ -32,12 +34,13 @@ public class NioHttpFetcher {
         String path = (uri.getRawPath() == null || uri.getRawPath().isEmpty()) ? "/" : uri.getRawPath();
         if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery();
 
+        // construir peticion HTTP GET
         String req =
                 "GET " + path + " HTTP/1.1\r\n" +
                         "Host: " + host + "\r\n" +
                         "User-Agent: Mozilla/5.0\r\n" +
                         "Accept: */*\r\n" +
-                        "Connection: close\r\n" +     // clave: leemos hasta EOF
+                        "Connection: close\r\n" +
                         "\r\n";
 
         ByteBuffer writeBuf = ByteBuffer.wrap(req.getBytes(StandardCharsets.US_ASCII));
@@ -83,7 +86,7 @@ public class NioHttpFetcher {
 
                     if (key.isReadable()) {
                         int n = sc.read(readBuf);
-                        if (n == -1) { // EOF
+                        if (n == -1) {
                             done = true;
                             break;
                         }
@@ -99,8 +102,9 @@ public class NioHttpFetcher {
 
         byte[] all = received.toByteArray();
 
+        // separar headers y body
         int split = indexOf(all, "\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
-        if (split < 0) throw new IOException("Respuesta HTTP inválida (sin headers).");
+        if (split < 0) throw new IOException("Respuesta HTTP invalida (sin headers).");
 
         byte[] headerBytes = Arrays.copyOfRange(all, 0, split);
         byte[] bodyBytes = Arrays.copyOfRange(all, split + 4, all.length);
@@ -119,7 +123,7 @@ public class NioHttpFetcher {
             }
         }
 
-        // Si viene chunked, decodifica
+        // decodificar chunked transfer encoding si es necesario
         String te = headers.getOrDefault("transfer-encoding", "").toLowerCase();
         if (te.contains("chunked")) {
             bodyBytes = decodeChunked(bodyBytes);
@@ -129,7 +133,7 @@ public class NioHttpFetcher {
     }
 
     private static int parseStatus(String statusLine) {
-        // HTTP/1.1 200 OK
+        // parsear linea de estado HTTP/1.1 200 OK
         try {
             String[] p = statusLine.split(" ");
             return Integer.parseInt(p[1].trim());
@@ -165,8 +169,7 @@ public class NioHttpFetcher {
 
             int size = Integer.parseInt(sizeHex.trim(), 16);
             if (size == 0) {
-                // consume trailer CRLF (y posibles trailers)
-                // leemos hasta una línea vacía
+                // consumir trailers hasta linea vacia
                 while (true) {
                     String trailer = readLineCRLF(in);
                     if (trailer == null || trailer.isEmpty()) break;
@@ -177,9 +180,9 @@ public class NioHttpFetcher {
             byte[] buf = in.readNBytes(size);
             out.write(buf);
 
-            // consume CRLF después del chunk
-            in.read(); // \r
-            in.read(); // \n
+            // consumir CRLF despues del chunk
+            in.read();
+            in.read();
         }
 
         return out.toByteArray();

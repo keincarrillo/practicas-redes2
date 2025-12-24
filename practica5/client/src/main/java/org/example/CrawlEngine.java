@@ -25,9 +25,11 @@ public class CrawlEngine {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean stopRequested = new AtomicBoolean(false);
 
+    // cola de URLs pendientes y conjunto de URLs ya visitadas
     private final Queue<UrlJob> frontier = new ConcurrentLinkedQueue<>();
     private final Set<String> seen = ConcurrentHashMap.newKeySet();
 
+    // contadores de estadisticas
     private final AtomicInteger attempted = new AtomicInteger(0);
     private final AtomicInteger ok = new AtomicInteger(0);
     private final AtomicInteger failed = new AtomicInteger(0);
@@ -54,9 +56,9 @@ public class CrawlEngine {
         seen.clear();
         stopRequested.set(false);
 
-        // Solo http:// (para “no bloqueante” sin SSLEngine)
+        // solo se soporta http:// para NIO no bloqueante sin SSLEngine
         if (!"http".equalsIgnoreCase(cfg.startUrl.getScheme())) {
-            listener.onLog("⚠ Solo se soporta http:// en modo NIO no-bloqueante (HTTPS requiere SSLEngine).\n");
+            listener.onLog("[ADVERTENCIA] Solo se soporta http:// en modo NIO no bloqueante (HTTPS requiere SSLEngine).\n");
             listener.onStatus("Listo");
             return;
         }
@@ -82,7 +84,7 @@ public class CrawlEngine {
 
             while (!stopRequested.get()) {
 
-                // Abrir nuevas conexiones hasta el límite
+                // abrir nuevas conexiones hasta el limite
                 while (inFlight < cfg.maxConnections) {
                     UrlJob job = frontier.poll();
                     if (job == null) break;
@@ -93,7 +95,7 @@ public class CrawlEngine {
                     openConnection(selector, ctxByKey, job);
                 }
 
-                // condición de fin
+                // condicion de fin
                 if (frontier.isEmpty() && inFlight == 0) {
                     break;
                 }
@@ -123,7 +125,7 @@ public class CrawlEngine {
                     }
                 }
 
-                // timeouts
+                // verificar timeouts
                 long now = System.currentTimeMillis();
                 for (var entry : new ArrayList<>(ctxByKey.entrySet())) {
                     ConnCtx ctx = entry.getValue();
@@ -137,7 +139,7 @@ public class CrawlEngine {
             }
 
         } catch (Exception e) {
-            listener.onLog("❌ Error fatal selector: " + e.getMessage() + "\n");
+            listener.onLog("[ERROR] Error fatal selector: " + e.getMessage() + "\n");
         } finally {
             running.set(false);
             listener.onStatus("Terminado.");
@@ -161,7 +163,7 @@ public class CrawlEngine {
         ctxByKey.put(key, ctx);
 
         inFlight++;
-        listener.onLog("→ Conectando: " + job.url + "\n");
+        listener.onLog("-> Conectando: " + job.url + "\n");
     }
 
     private void onConnect(SelectionKey key, ConnCtx ctx) throws IOException {
@@ -183,10 +185,10 @@ public class CrawlEngine {
     private void onRead(SelectionKey key, ConnCtx ctx) throws IOException {
         int n = ctx.channel.read(ctx.readBuf);
         if (n == -1) {
-            // EOF => respuesta completa
+            // EOF indica respuesta completa
             byte[] all = ctx.received.toByteArray();
             handleResponse(ctx, all);
-            closeCtx(Map.of(), key, ctx); // cierra
+            closeCtx(Map.of(), key, ctx);
             return;
         }
         if (n > 0) {
@@ -197,10 +199,10 @@ public class CrawlEngine {
     }
 
     private void handleResponse(ConnCtx ctx, byte[] all) {
-        // split headers/body
+        // separar headers y body
         int split = indexOf(all, "\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
         if (split < 0) {
-            fail(ctx, "Respuesta inválida (sin headers)");
+            fail(ctx, "Respuesta invalida (sin headers)");
             return;
         }
 
@@ -213,15 +215,15 @@ public class CrawlEngine {
         int status = parseStatus(lines.length > 0 ? lines[0] : "");
         Map<String, String> headers = parseHeaders(lines);
 
+        // manejo de redirect basico
         if (status >= 300 && status < 400) {
-            // redirect básico
             String loc = headers.get("location");
             if (loc != null) {
                 try {
                     URI redir = HtmlUtils.normalize(ctx.job.url.resolve(loc));
-                    listener.onLog("↪ Redirect " + status + " -> " + redir + "\n");
-                    enqueue(redir, ctx.job.depth); // misma profundidad
-                    ok.incrementAndGet(); // lo contamos como ok del request original
+                    listener.onLog("-> Redirect " + status + " -> " + redir + "\n");
+                    enqueue(redir, ctx.job.depth);
+                    ok.incrementAndGet();
                     return;
                 } catch (Exception ignored) {}
             }
@@ -232,13 +234,13 @@ public class CrawlEngine {
             return;
         }
 
-        // chunked
+        // decodificar chunked transfer encoding
         String te = headers.getOrDefault("transfer-encoding", "").toLowerCase();
         if (te.contains("chunked")) {
             try {
                 bodyBytes = decodeChunked(bodyBytes);
             } catch (Exception e) {
-                fail(ctx, "Chunked inválido");
+                fail(ctx, "Chunked invalido");
                 return;
             }
         }
@@ -252,17 +254,19 @@ public class CrawlEngine {
             Files.write(outFile, bodyBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
             ok.incrementAndGet();
-            listener.onLog("✅ Guardado: " + outFile + "\n");
+            listener.onLog("[OK] Guardado: " + outFile + "\n");
 
             if (isHtml) {
                 String html = new String(bodyBytes, StandardCharsets.UTF_8);
 
+                // extraer y encolar enlaces si no superamos la profundidad maxima
                 if (ctx.job.depth < cfg.maxDepth) {
                     for (URI link : HtmlUtils.extractLinks(html, ctx.job.url)) {
                         enqueue(link, ctx.job.depth + 1);
                     }
                 }
 
+                // reescribir enlaces a rutas locales
                 String rewritten = HtmlUtils.rewriteLinksToLocal(
                         html, ctx.job.url, outFile, cfg.outputDir, baseHostNoWww, cfg.sameHostOnly
                 );
@@ -280,7 +284,7 @@ public class CrawlEngine {
 
         if (uri.getScheme() == null) return;
         if (!uri.getScheme().equalsIgnoreCase("http")) {
-            return; // https lo ignoramos en esta versión
+            return; // ignorar https en esta version
         }
 
         String host = PathUtils.hostNoWww(uri.getHost());
@@ -288,7 +292,7 @@ public class CrawlEngine {
             return;
         }
 
-        // quita fragment en la clave y normaliza puerto default
+        // quitar fragment y normalizar puerto default
         String key = normalizeKey(uri);
 
         if (seen.add(key)) {
@@ -323,7 +327,7 @@ public class CrawlEngine {
 
     private void fail(ConnCtx ctx, String reason) {
         failed.incrementAndGet();
-        listener.onLog("❌ Falló: " + ctx.job.url + " (" + reason + ")\n");
+        listener.onLog("[FALLO] Fallo: " + ctx.job.url + " (" + reason + ")\n");
     }
 
     private void closeCtx(Map<SelectionKey, ConnCtx> ctxByKey, SelectionKey key, ConnCtx ctx) {
@@ -347,7 +351,7 @@ public class CrawlEngine {
     }
 
     private int parseStatus(String statusLine) {
-        // HTTP/1.1 200 OK
+        // parsear linea de estado HTTP/1.1 200 OK
         try {
             String[] p = statusLine.split(" ");
             return Integer.parseInt(p[1].trim());
@@ -395,7 +399,7 @@ public class CrawlEngine {
 
             int size = Integer.parseInt(sizeHex.trim(), 16);
             if (size == 0) {
-                // consume trailers hasta línea vacía
+                // consumir trailers hasta linea vacia
                 while (true) {
                     String t = readLineCRLF(in);
                     if (t == null || t.isEmpty()) break;
@@ -406,7 +410,7 @@ public class CrawlEngine {
             byte[] buf = in.readNBytes(size);
             out.write(buf);
 
-            // consume CRLF
+            // consumir CRLF despues del chunk
             in.read(); in.read();
         }
 
@@ -421,7 +425,7 @@ public class CrawlEngine {
             line.write(b);
             if (prev == '\r' && b == '\n') {
                 byte[] arr = line.toByteArray();
-                // quita \r\n
+                // quitar \r\n final
                 int len = arr.length;
                 if (len >= 2) {
                     return new String(arr, 0, len - 2, StandardCharsets.US_ASCII);
@@ -433,12 +437,14 @@ public class CrawlEngine {
         return null;
     }
 
+    // clase interna para representar un trabajo de URL pendiente
     private static class UrlJob {
         final URI url;
         final int depth;
         UrlJob(URI url, int depth) { this.url = url; this.depth = depth; }
     }
 
+    // clase interna para el contexto de cada conexion
     private static class ConnCtx {
         final UrlJob job;
         final SocketChannel channel;

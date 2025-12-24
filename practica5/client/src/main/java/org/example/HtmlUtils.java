@@ -13,6 +13,7 @@ public class HtmlUtils {
     private static final Pattern SRC_PATTERN  = Pattern.compile("src\\s*=\\s*([\"'])(.*?)\\1", Pattern.CASE_INSENSITIVE);
     private static final Pattern CSS_URL_PATTERN = Pattern.compile("url\\((['\"]?)(.*?)\\1\\)", Pattern.CASE_INSENSITIVE);
 
+    // extraer todos los enlaces de un documento HTML
     public static Set<URI> extractLinks(String html, URI base) {
         Set<URI> out = new LinkedHashSet<>();
         addMatches(out, html, base, HREF_PATTERN, 2);
@@ -39,14 +40,15 @@ public class HtmlUtils {
         }
     }
 
+    // verificar si un enlace debe ser ignorado
     public static boolean isSkippable(String link) {
         String l = link.toLowerCase();
         return l.startsWith("javascript:") || l.startsWith("mailto:") || l.startsWith("tel:") || l.startsWith("#") || l.startsWith("data:");
     }
 
+    // normalizar URI quitando fragment y convirtiendo a minusculas
     public static URI normalize(URI uri) {
         try {
-            // quita fragment
             return new URI(
                     uri.getScheme(),
                     uri.getUserInfo(),
@@ -61,6 +63,7 @@ public class HtmlUtils {
         }
     }
 
+    // reescribir enlaces HTML para que apunten a archivos locales
     public static String rewriteLinksToLocal(
             String html,
             URI pageUrl,
@@ -71,7 +74,6 @@ public class HtmlUtils {
     ) {
         html = rewriteAttr(html, pageUrl, pageLocalFile, outDir, baseHostNoWww, sameHostOnly, HREF_PATTERN, "href");
         html = rewriteAttr(html, pageUrl, pageLocalFile, outDir, baseHostNoWww, sameHostOnly, SRC_PATTERN, "src");
-        // CSS url(...) se deja tal cual (puedes extenderlo si quieres)
         return html;
     }
 
