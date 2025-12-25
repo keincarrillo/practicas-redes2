@@ -371,9 +371,3 @@ java -cp target/classes org.example.client.ShopClient
 - Cambia `PORT_PY` o `PORT_PROXY` en `.env` y ajusta `VITE_API_BASE`.
 
 ---
-
-## Autor / Equipo
-
-(Pon aquí tus nombres / grupo)
-
----
