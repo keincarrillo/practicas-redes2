@@ -207,10 +207,10 @@ Ejemplo rápido con `nc` (netcat) (en otra terminal):
 
 ```bash
 # Enviar comandos UDP al servidor:
-echo "LOGIN Benjir" | nc -u -w1 localhost 5000
+echo "LOGIN user" | nc -u -w1 localhost 5000
 echo "CREATE general" | nc -u -w1 localhost 5000
-echo "JOIN general Benjir" | nc -u -w1 localhost 5000
-echo "MSG general Benjir hola_desde_udp" | nc -u -w1 localhost 5000
+echo "JOIN general user" | nc -u -w1 localhost 5000
+echo "MSG general user hola_desde_udp" | nc -u -w1 localhost 5000
 ```
 
 > Nota: UDP depende del socket/puerto origen para que el servidor "sepa" a dónde responder (por eso a veces conviene usar una herramienta o script que mantenga el socket).
