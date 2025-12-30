@@ -89,7 +89,7 @@ Abre la app en el navegador (Vite normalmente usa):
 #### Login
 
 ```json
-{ "type": "login", "username": "Benjir" }
+{ "type": "login", "username": "user" }
 ```
 
 #### Crear sala
